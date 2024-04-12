@@ -8,6 +8,8 @@ from dateutil.relativedelta import relativedelta
 from zgw_consumers.api_models.base import Model, ZGWModel
 from zgw_consumers.api_models.constants import RolOmschrijving, RolTypes
 
+from open_inwoner.utils.glom import glom_multiple
+
 logger = logging.getLogger(__name__)
 
 
@@ -69,9 +71,6 @@ class Zaak(ZGWModel):
         """
         Prepare data for template
         """
-        from open_inwoner.openzaak.models import StatusTranslation
-
-        status_translate = StatusTranslation.objects.get_lookup()
 
         return {
             "identification": self.identification,
@@ -79,7 +78,7 @@ class Zaak(ZGWModel):
             "start_date": self.startdatum,
             "end_date": getattr(self, "einddatum", None),
             "description": self.zaaktype.omschrijving,
-            "current_status": status_translate.from_glom_multiple(
+            "current_status": glom_multiple(
                 self,
                 ("status.statustype.statustekst", "status.statustype.omschrijving"),
                 default="",
