@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Optional, Union
 
+from django.utils.translation import gettext as _
+
 from dateutil.relativedelta import relativedelta
 from zgw_consumers.api_models.base import Model, ZGWModel
 from zgw_consumers.api_models.constants import RolOmschrijving, RolTypes
@@ -81,7 +83,7 @@ class Zaak(ZGWModel):
             "current_status": glom_multiple(
                 self,
                 ("status.statustype.statustekst", "status.statustype.omschrijving"),
-                default="",
+                default=_("No data available"),
             ),
             "zaaktype_config": getattr(self, "zaaktype_config", None),
             "statustype_config": getattr(self, "statustype_config", None),
