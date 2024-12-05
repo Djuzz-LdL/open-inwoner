@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -8,6 +9,8 @@ from zgw_consumers.constants import APITypes
 
 from open_inwoner.utils.validators import validate_array_contents_non_empty
 
+from .constants import KlantenServiceType
+
 
 class OpenKlantConfigManager(models.Manager):
     def get_queryset(self):
@@ -17,7 +20,7 @@ class OpenKlantConfigManager(models.Manager):
 
 class OpenKlantConfig(SingletonModel):
     """
-    Global configuration and defaults for Klant & Contactmomenten APIs
+    Configuration and defaults for eSuite Klant & Contactmomenten APIs
     """
 
     klanten_service = models.OneToOneField(
@@ -132,51 +135,6 @@ class OpenKlantConfig(SingletonModel):
         return all(getattr(self, f, "") for f in self.register_api_required_fields)
 
 
-class OpenKlant2ConfigManager(models.Manager):
-    def get_queryset(self):
-        qs = super().get_queryset()
-        return qs.select_related("service")
-
-
-class OpenKlant2Config(models.Model):
-    service = models.OneToOneField(
-        "zgw_consumers.Service",
-        verbose_name=_("Klanten API"),
-        on_delete=models.PROTECT,
-        related_name="+",
-    )
-
-    # Vragen
-    mijn_vragen_kanaal = models.CharField(
-        verbose_name=_("Mijn vragen kanaal"),
-        default="",
-        blank=True,
-    )
-    mijn_vragen_organisatie_naam = models.CharField(
-        verbose_name=_("Mijn vragen organisatie naam"),
-        default="",
-        blank=True,
-    )
-    mijn_vragen_actor = models.CharField(
-        verbose_name=_("Mijn vragen actor"),
-        default="",
-        blank=True,
-    )
-    interne_taak_gevraagde_handeling = models.CharField(
-        verbose_name=_("Interne taak gevraagde handeling"),
-        default="",
-        blank=True,
-    )
-    interne_taak_toelichting = models.CharField(
-        verbose_name=_("Interne taak toelichting"),
-        default="",
-        blank=True,
-    )
-
-    class Meta:
-        verbose_name = _("OpenKlant2 configuration")
-
-
 class ContactFormSubject(OrderedModel):
     subject = models.CharField(
         verbose_name=_("Onderwerp"),
@@ -187,9 +145,8 @@ class ContactFormSubject(OrderedModel):
         max_length=255,
         blank=True,
     )
-    # FK for easy inline admins
     config = models.ForeignKey(
-        OpenKlantConfig,
+        "OpenKlantConfig",
         on_delete=models.CASCADE,
     )
 
@@ -229,3 +186,84 @@ class KlantContactMomentAnswer(models.Model):
         verbose_name = _("KlantContactMoment")
         verbose_name_plural = _("KlantContactMomenten")
         unique_together = [["user", "contactmoment_url"]]
+
+
+class OpenKlant2Config(SingletonModel):
+    service = models.OneToOneField(
+        "zgw_consumers.Service",
+        verbose_name=_("Klanten API"),
+        on_delete=models.PROTECT,
+        null=True,
+        related_name="+",
+    )
+
+    # Vragen
+    mijn_vragen_kanaal = models.CharField(
+        verbose_name=_("Mijn vragen kanaal"),
+        default="",
+        blank=True,
+    )
+    mijn_vragen_organisatie_naam = models.CharField(
+        verbose_name=_("Mijn vragen organisatie naam"),
+        default="",
+        blank=True,
+    )
+    mijn_vragen_actor = models.CharField(
+        verbose_name=_("Mijn vragen actor"),
+        default="",
+        blank=True,
+    )
+    interne_taak_gevraagde_handeling = models.CharField(
+        verbose_name=_("Interne taak gevraagde handeling"),
+        default="",
+        blank=True,
+    )
+    interne_taak_toelichting = models.CharField(
+        verbose_name=_("Interne taak toelichting"),
+        default="",
+        blank=True,
+    )
+
+    class Meta:
+        verbose_name = _("OpenKlant2 configuration")
+
+
+def validate_primary_backend(value):
+    if value == KlantenServiceType.OPENKLANT2.value:
+        config = OpenKlant2Config.get_solo()
+        if not config.service:
+            raise ValidationError(
+                "OpenKlant2 must be configured with a Klanten API service before it can be selected "
+                "as primary backend"
+            )
+        return
+
+    config = OpenKlantConfig.get_solo()
+    if not config.klanten_service:
+        raise ValidationError(
+            "OpenKlant must be configured with a Klanten API service before it can be selected "
+            "as primary backend"
+        )
+    if not config.contactmomenten_service:
+        raise ValidationError(
+            "OpenKlant must be configured with a Contactmomenten API service service before "
+            "it can be selected as primary backend"
+        )
+
+
+class KlantenSysteemConfig(SingletonModel):
+    primary_backend = models.CharField(
+        max_length=10,
+        choices=[(service.value, service.name) for service in KlantenServiceType],
+        help_text=_(
+            "Choose the primary backend for retrieving klanten data. "
+            "Changes to klanten data will be saved to both backends (if configured)."
+        ),
+        validators=[validate_primary_backend],
+    )
+
+    class Meta:
+        verbose_name = _("Configuratie Klanten Systeem")
+
+    def __str__(self):
+        return "Configuratie Klanten Systeem"

@@ -823,13 +823,7 @@ class OpenKlant2Service(KlantenService):
     client: OpenKlant2Client
 
     def __init__(self, config: OpenKlant2Config | None = None):
-        try:
-            self.config = config or OpenKlant2Config.objects.get()
-        except OpenKlant2Config.DoesNotExist:
-            raise ImproperlyConfigured("OpenKlant2Config not configured")
-        except OpenKlant2Config.MultipleObjectsReturned:
-            raise ImproperlyConfigured("Found multiple instances of OpenKlant2Config")
-
+        self.config = config or OpenKlant2Config.get_solo()
         self.client = OpenKlant2Client(
             base_url=self.config.service.api_root,
             request_kwargs={

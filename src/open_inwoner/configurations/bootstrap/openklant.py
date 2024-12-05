@@ -132,10 +132,7 @@ class OpenKlant2ConfigurationStep(BaseConfigurationStep[OpenKlant2Configuration]
             "service": service
         }
 
-        try:
-            config = OpenKlant2Config.objects.get()
-        except OpenKlant2Config.DoesNotExist:
-            config = OpenKlant2Config()
+        config = OpenKlant2Config.get_solo()
 
         for key, val in create_or_update_kwargs.items():
             setattr(config, key, val)

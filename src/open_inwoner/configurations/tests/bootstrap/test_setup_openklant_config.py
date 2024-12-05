@@ -189,7 +189,7 @@ class OpenKlant2ConfigurationStepTestCase(TestCase):
             OpenKlant2ConfigurationStep, yaml_source=OPENKLANT2_CONFIG_STEP_FULL_YAML
         )
 
-        config = OpenKlant2Config.objects.get()
+        config = OpenKlant2Config.get_solo()
 
         self.assertEqual(config.service, kc)
         self.assertEqual(config.mijn_vragen_kanaal, "formulier")
