@@ -5,6 +5,8 @@ from urllib.parse import urlencode
 import requests
 from requests.exceptions import JSONDecodeError
 
+from open_inwoner.utils.decorators import cache as cache_result
+
 from .constants import CompanyType
 from .models import KvKConfig
 
@@ -45,7 +47,7 @@ class KvKClient:
 
         return request_kwargs
 
-    def _request(self, endpoint: str, params: dict) -> dict:
+    def _request(self, endpoint: str, params: dict | None = None) -> dict:
         if not self.config or not self.config.api_root:
             return {}
 
@@ -122,6 +124,10 @@ class KvKClient:
                 branches.insert(0, branches.pop(branches.index(branch)))
 
         return branches
+
+    @cache_result("kvk:{kvk}")
+    def get_basisprofiel(self, kvk: str) -> dict:
+        return self._request(f"{self.basisprofielen_endpoint}/{kvk}")
 
     def retrieve_rsin_with_kvk(self, kvk, **kwargs) -> str | None:
         basisprofiel = self._request(

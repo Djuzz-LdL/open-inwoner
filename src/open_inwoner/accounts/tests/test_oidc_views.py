@@ -24,7 +24,6 @@ from open_inwoner.accounts.views.auth_oidc import (
 from open_inwoner.configurations.choices import OpenIDDisplayChoices
 from open_inwoner.configurations.models import SiteConfiguration
 from open_inwoner.kvk.branches import KVK_BRANCH_SESSION_VARIABLE
-from open_inwoner.openzaak.models import OpenZaakConfig
 
 from ...cms.profile.cms_apps import ProfileApphook
 from ...cms.tests import cms_tools
@@ -1061,6 +1060,7 @@ class eHerkenningOIDCFlowTests(WebTest):
         cms_tools.create_homepage()
         cms_tools.create_apphook_page(ProfileApphook)
 
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch("open_inwoner.kvk.client.KvKClient.get_all_company_branches")
     @patch("open_inwoner.kvk.signals.KvKClient.retrieve_rsin_with_kvk")
     @patch("mozilla_django_oidc_db.backends.OIDCAuthenticationBackend.get_userinfo")
@@ -1082,10 +1082,14 @@ class eHerkenningOIDCFlowTests(WebTest):
         mock_get_userinfo,
         mock_retrieve_rsin_with_kvk,
         mock_kvk,
+        mock_get_basisprofiel,
     ):
         mock_kvk.return_value = [
             {"vestigingsnummer": "1234"},
         ]
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
 
         mock_retrieve_rsin_with_kvk.return_value = "123456789"
         # set up a user with a colliding email address
@@ -1135,6 +1139,7 @@ class eHerkenningOIDCFlowTests(WebTest):
         self.assertEqual(db_user.first_name, "John")
         self.assertEqual(db_user.last_name, "Doe")
 
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch("open_inwoner.kvk.signals.KvKClient.retrieve_rsin_with_kvk")
     @patch("mozilla_django_oidc_db.backends.OIDCAuthenticationBackend.get_userinfo")
     @patch("mozilla_django_oidc_db.backends.OIDCAuthenticationBackend.store_tokens")
@@ -1154,7 +1159,11 @@ class eHerkenningOIDCFlowTests(WebTest):
         mock_store_tokens,
         mock_get_userinfo,
         mock_retrieve_rsin_with_kvk,
+        mock_get_basisprofiel,
     ):
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
         mock_retrieve_rsin_with_kvk.return_value = "123456789"
         # set up a user with a non existing email address
         mock_get_userinfo.return_value = {"sub": "00000000"}
@@ -1291,6 +1300,7 @@ class eHerkenningOIDCFlowTests(WebTest):
             ]
         }
     )
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch(
         "open_inwoner.kvk.signals.KvKClient.retrieve_rsin_with_kvk",
         return_value="123456789",
@@ -1329,12 +1339,16 @@ class eHerkenningOIDCFlowTests(WebTest):
         mock_get_userinfo,
         mock_kvk,
         mock_retrieve_rsin_with_kvk,
+        mock_get_basisprofiel,
     ):
         mock_get_userinfo.return_value = {
             "sub": "some_username",
             "kvk": "12345678",
         }
         mock_kvk.return_value = [{"vestigingsnummber": "1234"}]
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
 
         session = self.client.session
         session["oidc-error"] = "some error"
@@ -1488,6 +1502,7 @@ class eHerkenningOIDCFlowTests(WebTest):
 
         self.assertEqual(error_msg, str(GENERIC_EHERKENNING_ERROR_MSG))
 
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch("mozilla_django_oidc_db.backends.OIDCAuthenticationBackend.get_userinfo")
     @patch("mozilla_django_oidc_db.backends.OIDCAuthenticationBackend.store_tokens")
     @patch("mozilla_django_oidc_db.backends.OIDCAuthenticationBackend.verify_token")
@@ -1505,11 +1520,15 @@ class eHerkenningOIDCFlowTests(WebTest):
         mock_verify_token,
         mock_store_tokens,
         mock_get_userinfo,
+        mock_get_basisprofiel,
     ):
         mock_verify_token.side_effect = ValidationError("Something went wrong")
         mock_get_userinfo.return_value = {
             "sub": "some_username",
             "kvk": "12345678",
+        }
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
         }
 
         session = self.client.session
@@ -1543,12 +1562,8 @@ class eHerkenningOIDCFlowTests(WebTest):
 
         self.assertEqual(error_msg, str(GENERIC_EHERKENNING_ERROR_MSG))
 
-    @patch(
-        "open_inwoner.accounts.views.auth.OpenZaakConfig.get_solo",
-        return_value=OpenZaakConfig(fetch_eherkenning_zaken_with_rsin=True),
-        autospec=True,
-    )
     @patch("open_inwoner.kvk.signals.KvKClient.retrieve_rsin_with_kvk", autospec=True)
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch(
         "mozilla_django_oidc_db.backends.OIDCAuthenticationBackend.get_userinfo",
         autospec=True,
@@ -1579,8 +1594,8 @@ class eHerkenningOIDCFlowTests(WebTest):
         mock_verify_token,
         mock_store_tokens,
         mock_get_userinfo,
+        mock_get_basisprofiel,
         mock_retrieve_rsin_with_kvk,
-        mock_oz_config,
     ):
         """
         Eenmanszaken do not have an RSIN, which means that if we have a feature flag
@@ -1588,6 +1603,9 @@ class eHerkenningOIDCFlowTests(WebTest):
         let eenmanszaken log in using eHerkenning
         """
         mock_retrieve_rsin_with_kvk.return_value = ""
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Eenmanszaak"}}
+        }
         # set up a user with a non existing email address
         mock_get_userinfo.return_value = {"sub": "00000000"}
         eHerkenningUserFactory.create(kvk="12345678", email="existing_user@example.com")
@@ -1623,6 +1641,7 @@ class eHerkenningOIDCFlowTests(WebTest):
         return_value="123456789",
         autospec=True,
     )
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch(
         "open_inwoner.kvk.client.KvKClient.get_all_company_branches",
         autospec=True,
@@ -1666,6 +1685,7 @@ class eHerkenningOIDCFlowTests(WebTest):
         mock_get_userinfo,
         mock_siteconfig,
         mock_kvk,
+        mock_get_basisprofiel,
         mock_retrieve_rsin_with_kvk,
     ):
         """
@@ -1680,6 +1700,9 @@ class eHerkenningOIDCFlowTests(WebTest):
             {"kvkNummer": "12345678"},
             {"kvkNummer": "12345678", "vestigingsnummer": "1234"},
         ]
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
 
         self.assertEqual(User.objects.count(), 0)
 
@@ -1741,6 +1764,7 @@ class eHerkenningOIDCFlowTests(WebTest):
         "open_inwoner.kvk.signals.KvKClient.retrieve_rsin_with_kvk",
         autospec=True,
     )
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch(
         "open_inwoner.kvk.client.KvKClient.get_all_company_branches",
         autospec=True,
@@ -1784,6 +1808,7 @@ class eHerkenningOIDCFlowTests(WebTest):
         mock_get_userinfo,
         mock_siteconfig,
         mock_kvk,
+        mock_get_basisprofiel,
         mock_retrieve_rsin_with_kvk,
     ):
         """
@@ -1799,6 +1824,9 @@ class eHerkenningOIDCFlowTests(WebTest):
             {"kvkNummer": "12345678"},
             {"kvkNummer": "12345678", "vestigingsnummer": "1234"},
         ]
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
 
         self.assertEqual(User.objects.count(), 1)
 
@@ -1842,6 +1870,7 @@ class eHerkenningOIDCFlowTests(WebTest):
 
         self.assertEqual(profile_response.status_code, 200)
 
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch("open_inwoner.kvk.client.KvKClient.get_all_company_branches")
     @patch("open_inwoner.utils.context_processors.SiteConfiguration")
     @patch("mozilla_django_oidc_db.backends.OIDCAuthenticationBackend.get_userinfo")
@@ -1866,6 +1895,7 @@ class eHerkenningOIDCFlowTests(WebTest):
         mock_get_userinfo,
         mock_siteconfig,
         mock_kvk,
+        mock_get_basisprofiel,
     ):
         """
         Full authentication flow with redirect after successful login
@@ -1879,6 +1909,9 @@ class eHerkenningOIDCFlowTests(WebTest):
         mock_kvk.return_value = [
             {"kvkNummer": "12345678"},
         ]
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
 
         self.assertEqual(User.objects.count(), 1)
 
@@ -1921,6 +1954,7 @@ class eHerkenningOIDCFlowTests(WebTest):
 
         self.assertEqual(profile_response.status_code, 200)
 
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch("open_inwoner.kvk.client.KvKClient.get_all_company_branches")
     @patch("open_inwoner.utils.context_processors.SiteConfiguration")
     @patch("mozilla_django_oidc_db.backends.OIDCAuthenticationBackend.get_userinfo")
@@ -1945,6 +1979,7 @@ class eHerkenningOIDCFlowTests(WebTest):
         mock_get_userinfo,
         mock_siteconfig,
         mock_kvk,
+        mock_get_basisprofiel,
     ):
         """
         KVK branch selection should be skipped if KVK_BRANCH_SESSION_VARIABLE is present in session
@@ -1960,6 +1995,9 @@ class eHerkenningOIDCFlowTests(WebTest):
             {"kvkNummer": "12345678"},
             {"kvkNummer": "87654321"},
         ]
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
 
         self.assertEqual(User.objects.count(), 1)
 

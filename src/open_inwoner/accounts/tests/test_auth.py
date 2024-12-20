@@ -20,7 +20,6 @@ from open_inwoner.haalcentraal.tests.mixins import HaalCentraalMixin
 from open_inwoner.kvk.branches import get_kvk_branch_number
 from open_inwoner.kvk.tests.factories import CertificateFactory
 from open_inwoner.openklant.tests.data import MockAPIReadPatchData
-from open_inwoner.openzaak.models import OpenZaakConfig
 from open_inwoner.utils.tests.helpers import AssertTimelineLogMixin
 
 from ...cms.collaborate.cms_apps import CollaborateApphook
@@ -666,19 +665,20 @@ class eHerkenningRegistrationTest(AssertRedirectsMixin, WebTest):
 
         self.assertRedirectsLogin(response, with_host=True)
 
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch(
         "open_inwoner.kvk.signals.KvKClient.retrieve_rsin_with_kvk",
         return_value="",
         autospec=True,
     )
-    @patch(
-        "open_inwoner.accounts.views.auth.OpenZaakConfig.get_solo",
-        return_value=OpenZaakConfig(fetch_eherkenning_zaken_with_rsin=True),
-        autospec=True,
-    )
     def test_login_as_eenmanszaak_blocked(
-        self, mock_oz_config, mock_retrieve_rsin_with_kvk
+        self,
+        mock_retrieve_rsin_with_kvk,
+        mock_get_basisprofiel,
     ):
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Eenmanszaak"}}
+        }
         url = reverse("eherkenning-mock:password")
         params = {
             "acs": f"http://testserver{reverse('eherkenning:acs')}",
@@ -761,6 +761,7 @@ class eHerkenningRegistrationTest(AssertRedirectsMixin, WebTest):
             f"http://testserver{reverse('django_registration_register')}?invite={invite.key}",
         )
 
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch(
         "open_inwoner.kvk.signals.KvKClient.retrieve_rsin_with_kvk",
         return_value="123456789",
@@ -779,10 +780,14 @@ class eHerkenningRegistrationTest(AssertRedirectsMixin, WebTest):
         mock_solo,
         mock_kvk,
         mock_retrieve_rsin_with_kvk,
+        mock_get_basisprofiel,
     ):
         mock_kvk.return_value = [
             {"kvkNummer": "12345678", "vestigingsnummer": "1234"},
         ]
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
 
         mock_solo.return_value.api_key = "123"
         mock_solo.return_value.api_root = "http://foo.bar/api/v1/"
@@ -826,11 +831,14 @@ class eHerkenningRegistrationTest(AssertRedirectsMixin, WebTest):
         # check company branch number in session
         self.assertEqual(get_kvk_branch_number(self.client.session), None)
 
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch("open_inwoner.kvk.client.KvKClient.get_all_company_branches")
     @patch(
         "open_inwoner.kvk.models.KvKConfig.get_solo",
     )
-    def test_redirect_flow_with_no_vestigingsnummer(self, mock_solo, mock_kvk):
+    def test_redirect_flow_with_no_vestigingsnummer(
+        self, mock_solo, mock_kvk, mock_get_basisprofiel
+    ):
         """
         Assert that if the KvK API returns only a single company without vestigingsnummer:
             1. the redirect flow passes automatically through `KvKLoginMiddleware`
@@ -839,6 +847,9 @@ class eHerkenningRegistrationTest(AssertRedirectsMixin, WebTest):
         mock_kvk.return_value = [
             {"kvkNummer": "12345678"},
         ]
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
 
         mock_solo.return_value.api_key = "123"
         mock_solo.return_value.api_root = "http://foo.bar/api/v1/"
@@ -1207,6 +1218,7 @@ class DuplicateEmailRegistrationTest(WebTest):
         self.assertEqual(users.first().email, "test@example.com")
         self.assertEqual(users.last().email, "test@example.com")
 
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch(
         "open_inwoner.kvk.signals.KvKClient.retrieve_rsin_with_kvk",
         return_value="123456789",
@@ -1216,7 +1228,9 @@ class DuplicateEmailRegistrationTest(WebTest):
         "open_inwoner.kvk.client.KvKClient.get_all_company_branches",
         autospec=True,
     )
-    def test_eherkenning_user_success(self, mock_kvk, mock_retrieve_rsin_with_kvk):
+    def test_eherkenning_user_success(
+        self, mock_kvk, mock_retrieve_rsin_with_kvk, mock_get_basisprofiel
+    ):
         """Assert that eHerkenning users can register with duplicate emails"""
 
         mock_kvk.return_value = [
@@ -1231,6 +1245,9 @@ class DuplicateEmailRegistrationTest(WebTest):
                 "naam": "Mijn bedrijf",
             },
         ]
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
 
         test_user = eHerkenningUserFactory.create(
             email="test@localhost",
