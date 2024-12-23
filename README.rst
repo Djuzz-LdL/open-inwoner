@@ -13,8 +13,8 @@ Open Inwoner
 
 Platform voor gemeenten en overheden om producten inzichtelijker en toegankelijker te maken voor inwoners.
 
-Ontwikkeld door `Maykin Media B.V.`_ voor Dimpact en de `i4Sociaal`_ gemeenten:
-Deventer, Enschede, Groningen, Leeuwarden, Zaanstad, Zwolle.
+Ontwikkeld door `Maykin Media B.V.`_ voor Dimpact en de `Open Inwoner`_ gemeenten:
+Deventer, Enschede, Groningen, Leeuwarden, Hoorn, Zwolle.
 
 
 Introductie
