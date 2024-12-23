@@ -210,8 +210,8 @@ class EmailVerificationUserView(LogMixin, LoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         ctx = super().get_context_data(**kwargs)
         text = _(
-            "Er is een e-mail verstuurd naar {email}. Klik op de link in de mail om uw e-mailadres te bevestigen."
-            "Heef u geen e-mail ontvangen? Verstuur deze dan nog een keer via onderstaande knop."
+            "Er is een e-mail verstuurd naar {email}. Klik op de link in de mail om uw e-mailadres te bevestigen. "
+            "Heeft u geen e-mail ontvangen? Verstuur deze dan nog een keer via onderstaande knop."
         )
         ctx["verification_text"] = html_tag_wrap_format(
             text, "strong", email=self.request.user.email
