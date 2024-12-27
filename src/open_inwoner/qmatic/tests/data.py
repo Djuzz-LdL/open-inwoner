@@ -61,6 +61,20 @@ class QmaticMockData:
             ),
             services=[QmaticServiceFactory.build(name="ID kaart")],
         )
+        self.appointment_old = AppointmentFactory.build(
+            title="Qmatic web booking old",
+            start="1990-03-06T16:30:00+00:00",
+            notes="bar",
+            branch=BranchDetailFactory.build(
+                name="Hoofdkantoor",
+                timeZone="America/New_York",
+                addressCity="New York",
+                addressLine1="Hoofdkantoor",
+                addressLine2="Wall Street 1",
+                addressZip="1111 AA",
+            ),
+            services=[QmaticServiceFactory.build(name="Old appointment")],
+        )
 
     def setUpMocks(self, m):
         customer_data = [
@@ -107,6 +121,7 @@ class QmaticMockData:
             "appointmentList": [
                 self.appointment_idcard.dict(),
                 self.appointment_passport.dict(),
+                self.appointment_old.dict(),
             ],
         }
         m.get(

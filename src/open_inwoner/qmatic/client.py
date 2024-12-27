@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from datetime import date, datetime
 from urllib.parse import quote
 
 from ape_pie.client import APIClient
@@ -144,9 +144,13 @@ class Client(APIClient):
             return []
         response.raise_for_status()
         config = QmaticConfig.get_solo()
+        today = date.today()
         try:
             appointments = [
                 Appointment(**entry) for entry in response.json()["appointmentList"]
+            ]
+            appointments = [
+                entry for entry in appointments if entry.start.date() >= today
             ]
             for appointment in appointments:
                 appointment.url = (
