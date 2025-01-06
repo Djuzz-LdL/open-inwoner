@@ -11,6 +11,7 @@ from django.utils.translation import gettext as _
 
 import requests_mock
 from django_webtest import WebTest
+from freezegun import freeze_time
 from pyquery import PyQuery as PQ
 from webtest import Upload
 
@@ -1483,13 +1484,16 @@ class UserAppointmentsTests(ClearCachesMixin, WebTest):
     def test_render_list_if_appointments_are_found(self, m):
         self.data.setUpMocks(m)
 
-        response = self.app.get(self.appointments_url, user=self.data.user)
+        with freeze_time("2020-01-01 00:00"):
+            response = self.app.get(self.appointments_url, user=self.data.user)
 
         self.assertIn(_("Een overzicht van uw afspraken"), response.text)
 
         cards = response.pyquery(".appointment-info")
 
         self.assertEqual(len(cards), 2)
+
+        self.assertNotIn("Old appointment", response.text)
 
         self.assertEqual(PQ(cards[0]).find(".card__heading-2").text(), "Paspoort")
 

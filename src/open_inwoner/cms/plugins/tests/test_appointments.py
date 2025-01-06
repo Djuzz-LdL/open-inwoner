@@ -2,6 +2,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 import requests_mock
+from freezegun import freeze_time
 from pyquery import PyQuery as PQ
 
 from open_inwoner.cms.tests import cms_tools
@@ -19,9 +20,10 @@ class TestUserAppointmentsPlugin(TestCase):
 
         self.assertTrue(data.user.has_verified_email())
 
-        html, context = cms_tools.render_plugin(
-            UserAppointmentsPlugin, plugin_data={}, user=data.user
-        )
+        with freeze_time("2020-01-01 00:00"):
+            html, context = cms_tools.render_plugin(
+                UserAppointmentsPlugin, plugin_data={}, user=data.user
+            )
 
         appointments = context["appointments"]
 
@@ -29,6 +31,7 @@ class TestUserAppointmentsPlugin(TestCase):
 
         self.assertIn("Paspoort", html)
         self.assertIn("ID kaart", html)
+        self.assertNotIn("Old appointment", html)
 
         pyquery = PQ(html)
 
