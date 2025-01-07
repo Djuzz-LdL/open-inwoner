@@ -16,6 +16,7 @@ def get_or_create_klant_for_new_user(
     sender: type, instance: User, created: bool, **kwargs
 ) -> None:
     if not created:
+        logger.info("No klanten sync performed because user has just been created")
         return
 
     user = instance
@@ -34,13 +35,14 @@ def get_or_create_klant_for_new_user(
     ):
         return
 
-    partij, created = service.get_or_create_partij_for_user(
+    partij, partij_created = service.get_or_create_partij_for_user(
         fetch_params=fetch_params, user=user
     )
     if not partij:
         logger.error("Failed to create partij for new user %s", user)
         return
-    elif not created:
+
+    if not partij_created:
         service.update_user_from_partij(partij_uuid=partij["uuid"], user=user)
 
     logger.info("Created partij %s for new user %s", partij, user)
@@ -59,11 +61,14 @@ def get_or_create_klant_for_new_user(
     ):
         return
 
-    klant, created = service.get_or_create_klant(fetch_params=fetch_params, user=user)
+    klant, klant_created = service.get_or_create_klant(
+        fetch_params=fetch_params, user=user
+    )
     if not klant:
         logger.error("Failed to create klant for new user %s", user)
         return
-    elif not created:
+
+    if not klant_created:
         service.update_user_from_klant(klant, user)
 
     logger.info("Created klant %s for new user %s", klant, user)
