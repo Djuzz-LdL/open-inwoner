@@ -29,6 +29,7 @@ from .helpers import copy_with_new_uuid
 from .test_notification_data import MockAPIData, MockAPIDataAlt
 
 
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True, CELERY_TASK_EAGER_PROPAGATES=True)
 @requests_mock.Mocker()
 @patch("open_inwoner.openzaak.notifications._handle_status_update", autospec=True)
 class StatusNotificationHandlerTestCase(

@@ -1,3 +1,4 @@
+import dataclasses
 import logging
 
 from rest_framework import status
@@ -10,7 +11,7 @@ from open_inwoner.configurations.models import SiteConfiguration
 from open_inwoner.openzaak.api_models import Notification
 from open_inwoner.openzaak.auth import get_valid_subscription_from_request
 from open_inwoner.openzaak.exceptions import InvalidAuth
-from open_inwoner.openzaak.notifications import handle_zaken_notification
+from open_inwoner.openzaak.tasks import process_zaken_notification
 from open_inwoner.utils.logentry import system_action as log_system_action
 
 logger = logging.getLogger(__name__)
@@ -95,4 +96,6 @@ class ZakenNotificationsWebhookView(NotificationsWebhookBaseView):
         config = SiteConfiguration.get_solo()
         if not config.notifications_cases_enabled:
             return
-        handle_zaken_notification(notification)
+
+        notification_data = dataclasses.asdict(notification)
+        process_zaken_notification.delay(notification_data)

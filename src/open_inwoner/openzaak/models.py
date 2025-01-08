@@ -424,7 +424,6 @@ class OpenZaakConfig(SingletonModel):
         ),
         default=False,
     )
-
     order_statuses_by_date_set = models.BooleanField(
         verbose_name=_(
             "On the detail page of the case, order the statuses based on the date they have been set"

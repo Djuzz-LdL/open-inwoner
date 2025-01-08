@@ -1,7 +1,7 @@
 import logging
 from unittest.mock import patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse_lazy
 
 from rest_framework import status
@@ -38,6 +38,7 @@ def generate_auth_header_value(client_id, secret):
     return auth_value
 
 
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True, CELERY_TASK_EAGER_PROPAGATES=True)
 class NotificationSubscriptionAuthTest(TestCase):
     def test_valid_auth_retrieves_subscription(self):
         subscription = SubscriptionFactory(client_id="foo", secret="password")
@@ -76,7 +77,8 @@ class NotificationSubscriptionAuthTest(TestCase):
             get_valid_subscriptions_from_bearer(auth_value)
 
 
-@patch("open_inwoner.openzaak.api.views.handle_zaken_notification", autospec=True)
+@override_settings(CELERY_TASK_ALWAYS_EAGER=True, CELERY_TASK_EAGER_PROPAGATES=True)
+@patch("open_inwoner.openzaak.tasks.handle_zaken_notification", autospec=True)
 class NotificationWebhookAPITestCase(AssertTimelineLogMixin, APITestCase):
     """
     NOTE these tests run against the mounted zaken webhook (eg: ZakenNotificationsWebhookView),
