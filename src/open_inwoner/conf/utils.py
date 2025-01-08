@@ -46,7 +46,9 @@ def get_sentry_integrations() -> list:
     try:
         from sentry_sdk.integrations import celery
     except DidNotEnable:  # happens if the celery import fails by the integration
-        pass
+        logger.warning(
+            "Unable to initialize Sentry with Celery integration due to failing import"
+        )
     else:
         extra.append(celery.CeleryIntegration())
 
