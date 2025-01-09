@@ -58,7 +58,7 @@ def update_user_on_login(sender, user, request, *args, **kwargs):
 
 
 def _update_user_from_openklant2(
-    user: User, service: OpenKlant2Service, request
+    user: User, service: OpenKlant2Service, request: None = None
 ) -> None:
     if fetch_params := service.get_fetch_parameters(request=request):
         partij, created = service.get_or_create_partij_for_user(
@@ -69,7 +69,7 @@ def _update_user_from_openklant2(
 
 
 def _update_user_from_esuite(
-    user: User, service: eSuiteKlantenService, request
+    user: User, service: eSuiteKlantenService, request: None = None
 ) -> None:
     if not (fetch_params := service.get_fetch_parameters(request=request)):
         return
@@ -107,24 +107,10 @@ def get_or_create_klant_for_new_user(
     except Exception:
         logger.error("OpenKlant2 service failed to build")
     else:
-        if not (
-            fetch_params := service.get_fetch_parameters(
-                user=user, use_vestigingsnummer=True
-            )
-        ):
-            return
-
-        partij, partij_created = service.get_or_create_partij_for_user(
-            fetch_params=fetch_params, user=user
+        _update_user_from_openklant2(
+            user,
+            service,
         )
-        if not partij:
-            logger.error("Failed to create partij for new user %s", user)
-            return
-
-        if not partij_created:
-            service.update_user_from_partij(partij_uuid=partij["uuid"], user=user)
-
-        logger.info("Created partij %s for new user %s", partij, user)
 
     # eSuite
     try:
@@ -132,24 +118,7 @@ def get_or_create_klant_for_new_user(
     except Exception:
         logger.error("eSuiteKlantenService failed to build")
     else:
-        if not (
-            fetch_params := service.get_fetch_parameters(
-                user=user, use_vestigingsnummer=True
-            )
-        ):
-            return
-
-        klant, klant_created = service.get_or_create_klant(
-            fetch_params=fetch_params, user=user
-        )
-        if not klant:
-            logger.error("Failed to create klant for new user %s", user)
-            return
-
-        if not klant_created:
-            service.update_user_from_klant(klant, user)
-
-        logger.info("Created klant %s for new user %s", klant, user)
+        _update_user_from_esuite(user, service)
 
 
 @receiver(user_logged_in)
