@@ -18,7 +18,7 @@ from .api_models import (
     KlantCreateData,
     ObjectContactMoment,
 )
-from .models import OpenKlantConfig
+from .models import ESuiteKlantConfig
 
 logger = logging.getLogger(__name__)
 
@@ -328,7 +328,7 @@ class ContactmomentenClient(APIClient):
 
 
 def _build_open_klant_client(type_) -> APIClient | None:
-    config = OpenKlantConfig.get_solo()
+    config = ESuiteKlantConfig.get_solo()
     services_to_client_mapping = {
         "klanten": KlantenClient,
         "contactmomenten": ContactmomentenClient,

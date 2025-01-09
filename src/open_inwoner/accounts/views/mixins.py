@@ -2,7 +2,7 @@ import logging
 
 from django.core.exceptions import ImproperlyConfigured
 
-from open_inwoner.openklant.models import OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig
 from open_inwoner.openklant.services import eSuiteKlantenService
 
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ class KlantenAPIMixin:
             return
 
         try:
-            service = eSuiteKlantenService(config=OpenKlantConfig.get_solo())
+            service = eSuiteKlantenService(config=ESuiteKlantConfig.get_solo())
         except ImproperlyConfigured:
             logger.error("Error building KlantenService")
             return

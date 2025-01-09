@@ -2,7 +2,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from open_inwoner.accounts.models import User
-from open_inwoner.openklant.models import ContactFormSubject, OpenKlantConfig
+from open_inwoner.openklant.models import ContactFormSubject, ESuiteKlantConfig
 from open_inwoner.openklant.views.utils import generate_question_answer_pair
 from open_inwoner.utils.validators import DutchPhoneNumberValidator
 
@@ -57,7 +57,7 @@ class ContactForm(forms.Form):
         self.user = user
         self.request_session = request_session
 
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
         self.fields["subject"].queryset = config.contactformsubject_set.all()
 
         if self.user.is_authenticated:

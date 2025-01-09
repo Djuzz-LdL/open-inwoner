@@ -11,7 +11,7 @@ from open_inwoner.openklant.clients import (
     build_contactmomenten_client,
     build_klanten_client,
 )
-from open_inwoner.openklant.models import KlantContactMomentAnswer, OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig, KlantContactMomentAnswer
 from open_inwoner.utils.time import instance_is_new
 
 logger = logging.getLogger(__name__)
@@ -106,7 +106,7 @@ def get_fetch_parameters(
         return {"user_bsn": user.bsn}
     elif user.kvk:
         kvk_or_rsin = user.kvk
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
         if config.use_rsin_for_innNnpId_query_parameter:
             kvk_or_rsin = user.rsin
 

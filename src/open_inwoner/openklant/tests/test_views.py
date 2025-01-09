@@ -21,8 +21,8 @@ from open_inwoner.openklant.api_models import ContactMoment, Klant, KlantContact
 from open_inwoner.openklant.constants import KlantenServiceType, Status
 from open_inwoner.openklant.models import (
     ContactFormSubject,
+    ESuiteKlantConfig,
     KlantContactMomentAnswer,
-    OpenKlantConfig,
 )
 from open_inwoner.openklant.services import eSuiteVragenService
 from open_inwoner.openklant.tests.data import MockAPIReadData
@@ -65,15 +65,15 @@ class ContactMomentViewsTestCase(
         MockAPIReadData.setUpServices()
         self.api_group = ZGWApiGroupConfig.objects.get()
 
-        klanten_config = OpenKlantConfig.get_solo()
-        klanten_config.exclude_contactmoment_kanalen = ["intern_initiatief"]
-        klanten_config.save()
+        klant_config = ESuiteKlantConfig.get_solo()
+        klant_config.exclude_contactmoment_kanalen = ["intern_initiatief"]
+        klant_config.save()
 
         # for testing replacement of e-suite "onderwerp" code with OIP configured subject
         self.contactformsubject = ContactFormSubject.objects.create(
             subject="oip_subject",
             subject_code="e_suite_subject_code",
-            config=klanten_config,
+            config=klant_config,
         )
 
     def test_contactmoment_list_bsn(
@@ -246,7 +246,7 @@ class ContactMomentViewsTestCase(
             with self.subTest(
                 use_rsin_for_innNnpId_query_parameter=use_rsin_for_innNnpId_query_parameter
             ):
-                config = OpenKlantConfig.get_solo()
+                config = ESuiteKlantConfig.get_solo()
                 config.use_rsin_for_innNnpId_query_parameter = (
                     use_rsin_for_innNnpId_query_parameter
                 )
@@ -325,7 +325,7 @@ class ContactMomentViewsTestCase(
             with self.subTest(
                 use_rsin_for_innNnpId_query_parameter=use_rsin_for_innNnpId_query_parameter
             ):
-                config = OpenKlantConfig.get_solo()
+                config = ESuiteKlantConfig.get_solo()
                 config.use_rsin_for_innNnpId_query_parameter = (
                     use_rsin_for_innNnpId_query_parameter
                 )
@@ -613,7 +613,7 @@ class ContactMomentViewsTestCase(
         ContactFormSubject.objects.create(
             subject="control_subject_for_duplicate_code",
             subject_code=self.contactformsubject.subject_code,
-            config=OpenKlantConfig.get_solo(),
+            config=ESuiteKlantConfig.get_solo(),
         )
 
         detail_url_esuite = reverse(
@@ -744,7 +744,7 @@ class ContactMomentViewsTestCase(
                 # Avoid having a `KlantContactMomentAnswer` with the same URL for different users
                 KlantContactMomentAnswer.objects.all().delete()
 
-                config = OpenKlantConfig.get_solo()
+                config = ESuiteKlantConfig.get_solo()
                 config.use_rsin_for_innNnpId_query_parameter = (
                     use_rsin_for_innNnpId_query_parameter
                 )
@@ -793,7 +793,7 @@ class ContactMomentViewsTestCase(
             with self.subTest(
                 use_rsin_for_innNnpId_query_parameter=use_rsin_for_innNnpId_query_parameter
             ):
-                config = OpenKlantConfig.get_solo()
+                config = ESuiteKlantConfig.get_solo()
                 config.use_rsin_for_innNnpId_query_parameter = (
                     use_rsin_for_innNnpId_query_parameter
                 )
@@ -840,7 +840,7 @@ class ContactMomentViewsTestCase(
             with self.subTest(
                 use_rsin_for_innNnpId_query_parameter=use_rsin_for_innNnpId_query_parameter
             ):
-                config = OpenKlantConfig.get_solo()
+                config = ESuiteKlantConfig.get_solo()
                 config.use_rsin_for_innNnpId_query_parameter = (
                     use_rsin_for_innNnpId_query_parameter
                 )

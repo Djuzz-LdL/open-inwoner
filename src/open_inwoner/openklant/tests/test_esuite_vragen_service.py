@@ -6,7 +6,7 @@ import requests_mock
 
 from open_inwoner.accounts.tests.factories import UserFactory
 from open_inwoner.openklant.constants import KlantenServiceType, Status
-from open_inwoner.openklant.models import ContactFormSubject, OpenKlantConfig
+from open_inwoner.openklant.models import ContactFormSubject, ESuiteKlantConfig
 from open_inwoner.openklant.services import eSuiteVragenService
 from open_inwoner.openklant.tests.data import MockAPIReadData
 from open_inwoner.utils.url import uuid_from_url
@@ -22,7 +22,7 @@ class eSuiteVragenServiceTestCase(TestCase):
         MockAPIReadData.setUpServices()
         self.service = eSuiteVragenService()
         self.user = UserFactory()
-        klanten_config = OpenKlantConfig.get_solo()
+        klanten_config = ESuiteKlantConfig.get_solo()
         klanten_config.exclude_contactmoment_kanalen = ["intern_initiatief"]
         klanten_config.save()
 
@@ -34,7 +34,7 @@ class eSuiteVragenServiceTestCase(TestCase):
 
     def test_list_questions_returns_expected_rows(self, m):
         data = MockAPIReadData().install_mocks(m)
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
 
         for user, params, expected_klantcontact, expected_contactmoment, use_rsin in (
             (
@@ -105,7 +105,7 @@ class eSuiteVragenServiceTestCase(TestCase):
 
     def test_retrieve_question_returns_expected_result(self, m):
         data = MockAPIReadData().install_mocks(m)
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
 
         for user, params, expected_klantcontact, expected_contactmoment, use_rsin in (
             (

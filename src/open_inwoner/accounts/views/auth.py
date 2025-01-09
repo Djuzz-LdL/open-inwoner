@@ -23,7 +23,7 @@ from eherkenning.mock import eherkenning_conf
 from eherkenning.mock.views.eherkenning import (
     eHerkenningAssertionConsumerServiceMockView,
 )
-from open_inwoner.openklant.models import OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig
 from open_inwoner.openzaak.models import OpenZaakConfig
 from open_inwoner.utils.views import LogMixin
 
@@ -137,13 +137,13 @@ class BlockEenmanszaakLoginMixin:
         response = super().get(request)
 
         openzaak_config = OpenZaakConfig.get_solo()
-        openklant_config = OpenKlantConfig.get_solo()
+        klant_config = ESuiteKlantConfig.get_solo()
         if (
             hasattr(request.user, "rsin")
             and not request.user.rsin
             and (
                 openzaak_config.fetch_eherkenning_zaken_with_rsin
-                or openklant_config.use_rsin_for_innNnpId_query_parameter
+                or klant_config.use_rsin_for_innNnpId_query_parameter
             )
         ):
             auth.logout(request)

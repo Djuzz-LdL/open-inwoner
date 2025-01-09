@@ -6,23 +6,23 @@ from django_setup_configuration.exceptions import ConfigurationRunFailed
 from django_setup_configuration.test_utils import execute_single_step
 from zgw_consumers.constants import APITypes
 
-from open_inwoner.openklant.models import OpenKlant2Config, OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig, OpenKlant2Config
 from open_inwoner.openzaak.tests.factories import ServiceFactory
 
 from ...bootstrap.openklant import (
+    ESuiteKlantConfigurationStep,
     OpenKlant2ConfigurationStep,
-    OpenKlantConfigurationStep,
 )
 
 KLANTEN_SERVICE_API_ROOT = "https://openklant.local/klanten/api/v1/"
 CONTACTMOMENTEN_SERVICE_API_ROOT = "https://openklant.local/contactmomenten/api/v1/"
 
 BASE_DIR = Path(__file__).parent / "files"
-OPENKLANT_CONFIG_STEP_FULL_YAML = str(BASE_DIR / "openklant_config_step_full.yaml")
+ESUITEKLANT_CONFIG_STEP_FULL_YAML = str(BASE_DIR / "esuiteklant_config_step_full.yaml")
 OPENKLANT2_CONFIG_STEP_FULL_YAML = str(BASE_DIR / "openklant2_config_step_full.yaml")
 
 
-class OpenKlantConfigurationStepTestCase(TestCase):
+class ESuiteKlantConfigurationStepTestCase(TestCase):
     def test_configure(self):
         kc = ServiceFactory(
             slug="klanten-service",
@@ -35,10 +35,10 @@ class OpenKlantConfigurationStepTestCase(TestCase):
             api_type=APITypes.cmc,
         )
         execute_single_step(
-            OpenKlantConfigurationStep, yaml_source=OPENKLANT_CONFIG_STEP_FULL_YAML
+            ESuiteKlantConfigurationStep, yaml_source=ESUITEKLANT_CONFIG_STEP_FULL_YAML
         )
 
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
 
         self.assertEqual(config.klanten_service, kc)
         self.assertEqual(config.contactmomenten_service, cmc)
@@ -65,7 +65,8 @@ class OpenKlantConfigurationStepTestCase(TestCase):
 
         with self.assertRaises(ConfigurationRunFailed) as exc:
             execute_single_step(
-                OpenKlantConfigurationStep, yaml_source=OPENKLANT_CONFIG_STEP_FULL_YAML
+                ESuiteKlantConfigurationStep,
+                yaml_source=ESUITEKLANT_CONFIG_STEP_FULL_YAML,
             )
 
         self.assertEqual(
@@ -91,7 +92,8 @@ class OpenKlantConfigurationStepTestCase(TestCase):
 
         with self.assertRaises(ConfigurationRunFailed) as exc:
             execute_single_step(
-                OpenKlantConfigurationStep, yaml_source=OPENKLANT_CONFIG_STEP_FULL_YAML
+                ESuiteKlantConfigurationStep,
+                yaml_source=ESUITEKLANT_CONFIG_STEP_FULL_YAML,
             )
 
         self.assertEqual(
@@ -116,7 +118,8 @@ class OpenKlantConfigurationStepTestCase(TestCase):
 
         with self.assertRaises(ConfigurationRunFailed) as exc:
             execute_single_step(
-                OpenKlantConfigurationStep, yaml_source=OPENKLANT_CONFIG_STEP_FULL_YAML
+                ESuiteKlantConfigurationStep,
+                yaml_source=ESUITEKLANT_CONFIG_STEP_FULL_YAML,
             )
 
         self.assertEqual(
@@ -141,7 +144,7 @@ class OpenKlantConfigurationStepTestCase(TestCase):
         )
 
         def assert_values():
-            config = OpenKlantConfig.get_solo()
+            config = ESuiteKlantConfig.get_solo()
 
             self.assertEqual(config.klanten_service, kc)
             self.assertEqual(config.contactmomenten_service, cmc)
@@ -155,12 +158,12 @@ class OpenKlantConfigurationStepTestCase(TestCase):
             self.assertEqual(config.use_rsin_for_innNnpId_query_parameter, True)
 
         execute_single_step(
-            OpenKlantConfigurationStep, yaml_source=OPENKLANT_CONFIG_STEP_FULL_YAML
+            ESuiteKlantConfigurationStep, yaml_source=ESUITEKLANT_CONFIG_STEP_FULL_YAML
         )
 
         assert_values()
 
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
         config.register_email = "not-admin@oip.org"
         config.register_contact_moment = False
         config.register_bronorganisatie_rsin = "800000009"
@@ -171,7 +174,7 @@ class OpenKlantConfigurationStepTestCase(TestCase):
         config.save()
 
         execute_single_step(
-            OpenKlantConfigurationStep, yaml_source=OPENKLANT_CONFIG_STEP_FULL_YAML
+            ESuiteKlantConfigurationStep, yaml_source=ESUITEKLANT_CONFIG_STEP_FULL_YAML
         )
 
         assert_values()

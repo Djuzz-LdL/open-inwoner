@@ -28,7 +28,7 @@ from zgw_consumers.api_models.constants import RolOmschrijving
 from open_inwoner.accounts.models import User
 from open_inwoner.mail.service import send_contact_confirmation_mail
 from open_inwoner.openklant.constants import KlantenServiceType
-from open_inwoner.openklant.models import OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig
 from open_inwoner.openklant.services import (
     OpenKlant2Service,
     Question,
@@ -509,7 +509,7 @@ class InnerCaseDetailView(
         if not case:
             return {}
 
-        open_klant_config = OpenKlantConfig.get_solo()
+        open_klant_config = ESuiteKlantConfig.get_solo()
 
         case_type_config_description = ""
         case_type_document_upload_description = ""
@@ -905,7 +905,7 @@ class CaseContactFormView(CaseAccessMixin, LogMixin, FormView):
         form = self.get_form()
 
         if form.is_valid():
-            config = OpenKlantConfig.get_solo()
+            config = ESuiteKlantConfig.get_solo()
 
             email_success = False
             api_success = False
@@ -986,7 +986,7 @@ class CaseContactFormView(CaseAccessMixin, LogMixin, FormView):
             )
             return False
 
-    def register_by_api(self, form, config: OpenKlantConfig):
+    def register_by_api(self, form, config: ESuiteKlantConfig):
         assert config.has_api_configuration()
 
         try:
@@ -994,9 +994,8 @@ class CaseContactFormView(CaseAccessMixin, LogMixin, FormView):
         except ObjectDoesNotExist:
             ztc = None
 
-        # TODO
-        openklant_config = OpenKlantConfig.get_solo()
-        service = eSuiteKlantenService(config=openklant_config)
+        esuite_klant_config = ESuiteKlantConfig.get_solo()
+        service = eSuiteKlantenService(config=esuite_klant_config)
 
         if klanten_client := service.client:
             klant = service.retrieve_klant(**get_fetch_parameters(self.request))
@@ -1046,7 +1045,7 @@ class CaseContactFormView(CaseAccessMixin, LogMixin, FormView):
             data["onderwerp"] = ztc.contact_subject_code
 
         try:
-            service = eSuiteVragenService(config=openklant_config)
+            service = eSuiteVragenService(config=esuite_klant_config)
         except RuntimeError:
             logger.error("Failed to build eSuiteVragenService")
             return

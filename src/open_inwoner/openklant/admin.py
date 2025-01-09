@@ -1,19 +1,16 @@
 from django import forms
-from django.contrib import admin, messages
-from django.db.utils import IntegrityError
+from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
 from ordered_model.admin import OrderedInlineModelAdminMixin, OrderedTabularInline
 from solo.admin import SingletonModelAdmin
-from zgw_consumers.constants import APITypes
-from zgw_consumers.models import Service
 
 from .models import (
     ContactFormSubject,
+    ESuiteKlantConfig,
     KlantContactMomentAnswer,
     KlantenSysteemConfig,
     OpenKlant2Config,
-    OpenKlantConfig,
 )
 
 
@@ -41,9 +38,9 @@ class ContactFormSubjectInlineAdmin(OrderedTabularInline):
     extra = 0
 
 
-class OpenKlantConfigAdminForm(forms.ModelForm):
+class ESuiteKlantConfigAdminForm(forms.ModelForm):
     class Meta:
-        model = OpenKlantConfig
+        model = ESuiteKlantConfig
         fields = "__all__"
 
     def clean(self, *args, **kwargs):
@@ -53,14 +50,14 @@ class OpenKlantConfigAdminForm(forms.ModelForm):
             msg = _(
                 "Voor registratie in de Klanten en Contactmomenten API is dit veld vereist."
             )
-            for field_name in OpenKlantConfig.register_api_required_fields:
+            for field_name in ESuiteKlantConfig.register_api_required_fields:
                 if not cleaned_data[field_name]:
                     self.add_error(field_name, msg)
 
 
-@admin.register(OpenKlantConfig)
-class OpenKlantConfigAdmin(OrderedInlineModelAdminMixin, SingletonModelAdmin):
-    form = OpenKlantConfigAdminForm
+@admin.register(ESuiteKlantConfig)
+class ESuiteKlantConfigAdmin(OrderedInlineModelAdminMixin, SingletonModelAdmin):
+    form = ESuiteKlantConfigAdminForm
     inlines = [
         ContactFormSubjectInlineAdmin,
     ]
@@ -126,7 +123,7 @@ class KlantContactMomentAnswerAdmin(admin.ModelAdmin):
 
 class OpenKlant2ConfigAdminForm(forms.ModelForm):
     class Meta:
-        model = OpenKlantConfig
+        model = OpenKlant2Config
         fields = "__all__"
 
 
@@ -160,7 +157,7 @@ class OpenKlant2ConfigAdmin(SingletonModelAdmin):
 
 @admin.register(KlantenSysteemConfig)
 class KlantenSysteemConfigAdmin(SingletonModelAdmin):
-    change_form_template = "admin/openklant/klantensysteemsconfig/change_form.html"
+    change_form_template = "admin/openklant/klantensysteemconfig/change_form.html"
 
     class Meta:
         model = KlantenSysteemConfig

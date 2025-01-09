@@ -12,13 +12,13 @@ from open_inwoner.utils.validators import validate_array_contents_non_empty
 from .constants import KlantenServiceType
 
 
-class OpenKlantConfigManager(models.Manager):
+class ESuiteKlantConfigManager(models.Manager):
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.select_related("klanten_service", "contactmomenten_service")
 
 
-class OpenKlantConfig(SingletonModel):
+class ESuiteKlantConfig(SingletonModel):
     """
     Configuration and defaults for eSuite Klant & Contactmomenten APIs
     """
@@ -120,10 +120,10 @@ class OpenKlantConfig(SingletonModel):
         "register_type",
     )
 
-    objects = OpenKlantConfigManager()
+    objects = ESuiteKlantConfigManager()
 
     class Meta:
-        verbose_name = _("Open Klant configuration")
+        verbose_name = _("eSuite Klant configuration")
 
     def has_register(self) -> bool:
         return self.register_email or self.has_api_configuration()
@@ -146,7 +146,7 @@ class ContactFormSubject(OrderedModel):
         blank=True,
     )
     config = models.ForeignKey(
-        "OpenKlantConfig",
+        "ESuiteKlantConfig",
         on_delete=models.CASCADE,
     )
 
@@ -238,15 +238,15 @@ def validate_primary_backend(value):
             )
         return
 
-    config = OpenKlantConfig.get_solo()
+    config = ESuiteKlantConfig.get_solo()
     if not config.klanten_service:
         raise ValidationError(
-            "OpenKlant must be configured with a Klanten API service before it can be selected "
+            "The Esuite klant system must be configured with a Klanten API service before it can be selected "
             "as primary backend"
         )
     if not config.contactmomenten_service:
         raise ValidationError(
-            "OpenKlant must be configured with a Contactmomenten API service service before "
+            "The Esuite klant system must be configured with a Contactmomenten API service service before "
             "it can be selected as primary backend"
         )
 

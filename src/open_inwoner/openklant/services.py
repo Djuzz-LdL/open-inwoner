@@ -37,9 +37,9 @@ from open_inwoner.openklant.api_models import (
 from open_inwoner.openklant.constants import KlantenServiceType, Status
 from open_inwoner.openklant.models import (
     ContactFormSubject,
+    ESuiteKlantConfig,
     KlantContactMomentAnswer,
     OpenKlant2Config,
-    OpenKlantConfig,
 )
 from open_inwoner.openklant.wrap import (
     contactmoment_has_new_answer,
@@ -101,7 +101,7 @@ QuestionValidator = TypeAdapter(Question)
 
 
 class KlantenService(Protocol):
-    config: OpenKlantConfig | OpenKlant2Config
+    config: ESuiteKlantConfig | OpenKlant2Config
     service_config: ServiceConfig
     client: APIClient
 
@@ -120,7 +120,7 @@ class KlantenService(Protocol):
             return {"user_bsn": user.bsn}
         elif user.kvk:
             kvk_or_rsin = user.kvk
-            config = OpenKlantConfig.get_solo()
+            config = ESuiteKlantConfig.get_solo()
             if config.use_rsin_for_innNnpId_query_parameter:
                 kvk_or_rsin = user.rsin
 
@@ -138,10 +138,10 @@ class KlantenService(Protocol):
 
 
 class eSuiteKlantenService(KlantenService):
-    config: OpenKlantConfig
+    config: ESuiteKlantConfig
 
-    def __init__(self, config: OpenKlantConfig | None = None):
-        self.config = config or OpenKlantConfig.get_solo()
+    def __init__(self, config: ESuiteKlantConfig | None = None):
+        self.config = config or ESuiteKlantConfig.get_solo()
         if not self.config:
             raise ImproperlyConfigured(
                 "eSuiteKlantenService instance needs a configuration"
@@ -355,10 +355,10 @@ class eSuiteKlantenService(KlantenService):
 
 
 class eSuiteVragenService(KlantenService):
-    config: OpenKlantConfig
+    config: ESuiteKlantConfig
 
-    def __init__(self, config: OpenKlantConfig | None = None):
-        self.config = config or OpenKlantConfig.get_solo()
+    def __init__(self, config: ESuiteKlantConfig | None = None):
+        self.config = config or ESuiteKlantConfig.get_solo()
         if not self.config:
             raise RuntimeError("eSuiteVragenService instance needs a configuration")
 
@@ -651,7 +651,7 @@ class eSuiteVragenService(KlantenService):
     ) -> Iterable[Question]:
         kcms = self.fetch_klantcontactmomenten(**fetch_params)
 
-        klant_config = OpenKlantConfig.get_solo()
+        klant_config = ESuiteKlantConfig.get_solo()
         if exclude_range := klant_config.exclude_contactmoment_kanalen:
             kcms = [
                 item

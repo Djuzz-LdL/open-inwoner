@@ -9,7 +9,7 @@ from zgw_consumers.constants import APITypes
 from zgw_consumers.models import Service
 
 from open_inwoner.configurations.bootstrap.utils import get_service
-from open_inwoner.openklant.models import OpenKlant2Config, OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig, OpenKlant2Config
 
 
 class OpenKlant2Configuration(ConfigurationModel):
@@ -32,7 +32,7 @@ class KlantenApiConfigurationModel(ConfigurationModel):
     klanten_service_identifier: str
     contactmomenten_service_identifier: str
     exclude_contactmoment_kanalen: list[str] | None = DjangoModelRef(
-        OpenKlantConfig,
+        ESuiteKlantConfig,
         "exclude_contactmoment_kanalen",
         default=None,
     )
@@ -40,7 +40,7 @@ class KlantenApiConfigurationModel(ConfigurationModel):
 
     class Meta:
         django_model_refs = {
-            OpenKlantConfig: (
+            ESuiteKlantConfig: (
                 "register_email",
                 "register_contact_moment",
                 "register_bronorganisatie_rsin",
@@ -53,7 +53,7 @@ class KlantenApiConfigurationModel(ConfigurationModel):
         }
 
 
-class OpenKlantConfigurationStep(BaseConfigurationStep[KlantenApiConfigurationModel]):
+class ESuiteKlantConfigurationStep(BaseConfigurationStep[KlantenApiConfigurationModel]):
     """
     Configure the KIC settings and set any feature flags or other options if specified
     """
@@ -64,7 +64,7 @@ class OpenKlantConfigurationStep(BaseConfigurationStep[KlantenApiConfigurationMo
     config_model = KlantenApiConfigurationModel
 
     def execute(self, model: KlantenApiConfigurationModel):
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
 
         try:
             kc = get_service(model.klanten_service_identifier)

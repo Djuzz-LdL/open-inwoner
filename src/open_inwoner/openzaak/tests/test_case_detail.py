@@ -32,7 +32,7 @@ from open_inwoner.openklant.constants import (
     KlantenServiceType,
     Status as ContactMomentStatus,
 )
-from open_inwoner.openklant.models import OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig
 from open_inwoner.openklant.services import eSuiteVragenService
 from open_inwoner.openklant.tests.factories import make_question_from_contactmoment
 from open_inwoner.openklant.tests.mocks import MockOpenKlant2Service
@@ -124,7 +124,7 @@ class TestCaseDetailView(
         self.config.save()
 
         # openklant config
-        self.openklant_config = OpenKlantConfig.get_solo()
+        self.openklant_config = ESuiteKlantConfig.get_solo()
         self.openklant_config.contactmomenten_service = self.contactmoment_service
         self.openklant_config.save()
 
