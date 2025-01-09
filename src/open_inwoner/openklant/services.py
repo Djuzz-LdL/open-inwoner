@@ -31,7 +31,7 @@ from open_inwoner.openklant.api_models import (
     Klant,
     KlantContactMoment,
     KlantContactRol,
-    KlantCreateData,
+    KlantWritePayload,
     ObjectContactMoment,
 )
 from open_inwoner.openklant.constants import KlantenServiceType, Status
@@ -153,7 +153,9 @@ class eSuiteKlantenService(KlantenService):
                 "eSuiteKlantenService instance needs a servivce configuration"
             )
 
-        self.client = build_zgw_client(service=self.service_config)
+        self.client = build_zgw_client(
+            service=self.service_config, client_factory=APIClient
+        )
         if not self.client:
             raise RuntimeError("eSuiteKlantenService instance needs a client")
 
@@ -232,60 +234,35 @@ class eSuiteKlantenService(KlantenService):
         user_bsn: str | None = None,
         user_kvk_or_rsin: str | None = None,
         vestigingsnummer: str | None = None,
-        data: KlantCreateData = None,
+        *,
+        data: KlantWritePayload | None = None,
     ) -> Klant | None:
-        if user_bsn:
-            return self._create_klant_for_bsn(user_bsn)
+        if sum(bool(arg) for arg in (user_bsn, user_kvk_or_rsin, vestigingsnummer)) > 1:
+            raise ValueError("Only one argument can be specified")
 
-        if user_kvk_or_rsin:
-            return self._create_klant_for_kvk_or_rsin(
-                user_kvk_or_rsin, vestigingsnummer=vestigingsnummer
-            )
+        payload = {}
+
+        # Include writable attributes, if provided
+        if data:
+            payload.update(data)
+
+        if user_bsn:
+            payload = payload | {"subjectIdentificatie": {"inpBsn": user_bsn}}
+        elif user_kvk_or_rsin:
+            payload = payload | {"subjectIdentificatie": {"innNnpId": user_kvk_or_rsin}}
+        elif vestigingsnummer:
+            payload = payload | {
+                "subjectIdentificatie": {"vestigingsNummer": vestigingsnummer}
+            }
 
         try:
-            response = self.client.post("klanten", json=data)
-            data = get_json_response(response)
+            response = self.client.post("klanten", json=payload)
+            response_data = get_json_response(response)
         except (RequestException, ClientError):
             logger.exception("exception while making request")
             return
 
-        klant = factory(Klant, data)
-
-        return klant
-
-    def _create_klant_for_bsn(self, user_bsn: str) -> Klant:
-        payload = {"subjectIdentificatie": {"inpBsn": user_bsn}}
-
-        try:
-            response = self.client.post("klanten", json=payload)
-            data = get_json_response(response)
-        except (RequestException, ClientError):
-            logger.exception("exception while making request")
-            return None
-
-        klant = factory(Klant, data)
-
-        return klant
-
-    def _create_klant_for_kvk_or_rsin(
-        self, user_kvk_or_rsin: str, *, vestigingsnummer=None
-    ) -> list[Klant]:
-        payload = {"subjectIdentificatie": {"innNnpId": user_kvk_or_rsin}}
-
-        if vestigingsnummer:
-            payload = {"subjectIdentificatie": {"vestigingsNummer": vestigingsnummer}}
-
-        try:
-            response = self.client.post(
-                "klanten",
-                json=payload,
-            )
-            data = get_json_response(response)
-        except (RequestException, ClientError):
-            logger.exception("exception while making request")
-            return None
-
-        klant = factory(Klant, data)
+        klant = factory(Klant, response_data)
 
         return klant
 
