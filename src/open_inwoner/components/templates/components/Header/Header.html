@@ -88,12 +88,6 @@
                                 {% trans "Logout" as logout %}
                                 {% link text=logout href=request.user.get_logout_url icon="login" icon_position="before" primary=True %}
                             </li>
-                            {% if cms_apps.products and request.user.is_authenticated or not config.hide_search_from_anonymous_users %}
-                                <li class="header__list-item">
-                                    {% trans "Zoeken" as search %}
-                                    {% link text=search href="/search" icon="search" icon_position="before" %}
-                                </li>
-                            {% endif %}
                         </ul>
                     {% elif config.login_show %}
                         <ul class="header__list">
@@ -101,10 +95,6 @@
                                 {% url 'login' as login_url %}
                                 {% trans "Log in" as loginmobile %}
                                 {% link text=loginmobile title=loginmobile href=login_url icon="account_circle" icon_position="before" primary=True icon_outlined=True %}
-                            </li>
-                            <li class="header__list-item">
-                                {% trans "Zoeken" as search %}
-                                {% link text=search href="/search" icon="search" icon_position="before" %}
                             </li>
                         </ul>
                     {% endif %}
