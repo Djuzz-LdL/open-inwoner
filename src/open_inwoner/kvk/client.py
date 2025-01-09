@@ -85,6 +85,7 @@ class KvKClient:
 
         Cf. https://developers.kvk.nl/nl/documentation/zoeken-api
         """
+        kwargs.update({"resultatenPerPagina": 100})
         return self._request(self.search_endpoint, params=kwargs)
 
     def get_company_headquarters(self, kvk: str, **kwargs) -> dict:
