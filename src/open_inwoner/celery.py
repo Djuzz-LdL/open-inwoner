@@ -70,3 +70,9 @@ def worker_shutdown(**_):
 
 
 app.steps["worker"].add(LivenessProbe)
+
+
+@app.task
+def trigger_exception():
+    """Trigger an exception for debugging purposes."""
+    return 1 / 0

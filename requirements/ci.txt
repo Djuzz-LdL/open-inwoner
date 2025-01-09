@@ -238,6 +238,7 @@ django==4.2.16
     #   mozilla-django-oidc
     #   mozilla-django-oidc-db
     #   notifications-api-common
+    #   sentry-sdk
     #   zgw-consumers
     #   zgw-consumers-oas
 django-admin-index==3.1.0
@@ -992,10 +993,11 @@ requests==2.31.0
     #   zgw-consumers
 requests-mock==1.12.1
     # via -r requirements/test-tools.in
-sentry-sdk==1.38.0
+sentry-sdk[django]==2.19.2
     # via
     #   -c requirements/base.txt
     #   -r requirements/base.txt
+    #   sentry-sdk
 simplejson==3.19.2
     # via
     #   -c requirements/base.txt
