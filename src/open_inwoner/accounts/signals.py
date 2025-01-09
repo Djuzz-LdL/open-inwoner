@@ -106,52 +106,50 @@ def get_or_create_klant_for_new_user(
         service = OpenKlant2Service()
     except Exception:
         logger.error("OpenKlant2 service failed to build")
-        return
+    else:
+        if not (
+            fetch_params := service.get_fetch_parameters(
+                user=user, use_vestigingsnummer=True
+            )
+        ):
+            return
 
-    if not (
-        fetch_params := service.get_fetch_parameters(
-            user=user, use_vestigingsnummer=True
+        partij, partij_created = service.get_or_create_partij_for_user(
+            fetch_params=fetch_params, user=user
         )
-    ):
-        return
+        if not partij:
+            logger.error("Failed to create partij for new user %s", user)
+            return
 
-    partij, partij_created = service.get_or_create_partij_for_user(
-        fetch_params=fetch_params, user=user
-    )
-    if not partij:
-        logger.error("Failed to create partij for new user %s", user)
-        return
+        if not partij_created:
+            service.update_user_from_partij(partij_uuid=partij["uuid"], user=user)
 
-    if not partij_created:
-        service.update_user_from_partij(partij_uuid=partij["uuid"], user=user)
-
-    logger.info("Created partij %s for new user %s", partij, user)
+        logger.info("Created partij %s for new user %s", partij, user)
 
     # eSuite
     try:
         service = eSuiteKlantenService()
     except Exception:
         logger.error("eSuiteKlantenService failed to build")
-        return
+    else:
+        if not (
+            fetch_params := service.get_fetch_parameters(
+                user=user, use_vestigingsnummer=True
+            )
+        ):
+            return
 
-    if not (
-        fetch_params := service.get_fetch_parameters(
-            user=user, use_vestigingsnummer=True
+        klant, klant_created = service.get_or_create_klant(
+            fetch_params=fetch_params, user=user
         )
-    ):
-        return
+        if not klant:
+            logger.error("Failed to create klant for new user %s", user)
+            return
 
-    klant, klant_created = service.get_or_create_klant(
-        fetch_params=fetch_params, user=user
-    )
-    if not klant:
-        logger.error("Failed to create klant for new user %s", user)
-        return
+        if not klant_created:
+            service.update_user_from_klant(klant, user)
 
-    if not klant_created:
-        service.update_user_from_klant(klant, user)
-
-    logger.info("Created klant %s for new user %s", klant, user)
+        logger.info("Created klant %s for new user %s", klant, user)
 
 
 @receiver(user_logged_in)
