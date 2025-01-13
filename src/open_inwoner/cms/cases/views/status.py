@@ -7,7 +7,11 @@ from typing import Iterable, Protocol
 
 from django.conf import settings
 from django.contrib import messages
-from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.core.exceptions import (
+    ImproperlyConfigured,
+    ObjectDoesNotExist,
+    PermissionDenied,
+)
 from django.http import (
     Http404,
     HttpRequest,
@@ -994,42 +998,29 @@ class CaseContactFormView(CaseAccessMixin, LogMixin, FormView):
         except ObjectDoesNotExist:
             ztc = None
 
-        esuite_klant_config = ESuiteKlantConfig.get_solo()
-        service = eSuiteKlantenService(config=esuite_klant_config)
-
-        if klanten_client := service.client:
-            klant = service.retrieve_klant(**get_fetch_parameters(self.request))
-
-            if klant:
+        klant = None
+        try:
+            service = eSuiteKlantenService(config=config)
+        except (ImproperlyConfigured, RuntimeError):
+            self.log_system_action("could not build client for klanten API")
+        else:
+            klant, created = service.get_or_create_klant(
+                fetch_params=get_fetch_parameters(self.request), user=self.request.user
+            )
+            if not klant:
                 self.log_system_action(
-                    "retrieved klant for user", user=self.request.user
+                    "could not create klant for user", user=self.request.user
                 )
             else:
-                self.log_system_action(
-                    "could not retrieve klant for user", user=self.request.user
-                )
-                data = {
-                    "bronorganisatie": config.register_bronorganisatie_rsin,
-                    "voornaam": self.request.user.first_name,
-                    "voorvoegselAchternaam": self.request.user.infix,
-                    "achternaam": self.request.user.last_name,
-                    "emailadres": self.request.user.email,
-                    "telefoonnummer": self.request.user.phonenumber,
-                }
-                # registering klanten won't work in e-Suite as it always pulls from BRP (but try anyway and fallback to appending details to tekst if fails)
-                klant = service.create_klant(data)
-
-                if klant:
+                if created:
                     self.log_system_action(
-                        "created klant for basic authenticated user",
+                        (
+                            "created klant for basic authenticated user"
+                            if created
+                            else "retrieved klant for user"
+                        ),
                         user=self.request.user,
                     )
-                else:
-                    self.log_system_action(
-                        "could not create klant for user", user=self.request.user
-                    )
-        else:
-            self.log_system_action("could not build client for klanten API")
 
         # create contact moment
         question = form.cleaned_data["question"]
@@ -1045,7 +1036,7 @@ class CaseContactFormView(CaseAccessMixin, LogMixin, FormView):
             data["onderwerp"] = ztc.contact_subject_code
 
         try:
-            service = eSuiteVragenService(config=esuite_klant_config)
+            service = eSuiteVragenService(config=config)
         except RuntimeError:
             logger.error("Failed to build eSuiteVragenService")
             return

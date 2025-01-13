@@ -6,13 +6,19 @@ from typing import NotRequired, Optional, TypedDict, Union
 from zgw_consumers.api_models.base import ZGWModel
 
 
-class KlantCreateData(TypedDict):
-    bronorganisatie: str
-    voornaam: str
-    voorvoegselAchternaam: str
-    achternaam: str
+class KlantWritePayload(TypedDict, total=False):
+    """The writable fields for an eSuite klant.
+
+    Note this excludes the subjectIdentificatie field which eSuite uses to identify
+    the user and fetch the remaining personal details from the BRP (such as name,
+    address, and so forth). It is intended to specify what fields can be written for a
+    _known_ user.
+    """
+
     telefoonnummer: str
+    telefoonnummerAlternatief: str
     emailadres: str
+    toestemmingZaakNotificatiesAlleenDigitaal: bool
 
 
 @dataclass
@@ -32,6 +38,7 @@ class Klant(ZGWModel):
     telefoonnummer: str = ""
     emailadres: str = ""
     toestemming_zaak_notificaties_alleen_digitaal: bool | None = None
+    bedrijfsnaam: str = ""
 
     def get_name_display(self):
         return " ".join(

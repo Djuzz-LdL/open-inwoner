@@ -156,6 +156,10 @@ class MockAPIReadData(MockAPIData):
             emailadres="foo@example.com",
             telefoonnummer="0612345678",
             toestemmingZaakNotificatiesAlleenDigitaal=False,
+            voornaam="John",
+            achternaam="Doe",
+            voorvoegselAchternaam="van der",
+            bedrijfsnaam="",
         )
         self.klant_kvk = generate_oas_component_cached(
             "kc",
@@ -169,6 +173,10 @@ class MockAPIReadData(MockAPIData):
             emailadres="foo@bar.com",
             telefoonnummer="0687654321",
             toestemmingZaakNotificatiesAlleenDigitaal=False,
+            voornaam="",
+            achternaam="",
+            voorvoegselAchternaam="",
+            bedrijfsnaam="AcmeCorp B.V.",
         )
         self.klant_vestiging = generate_oas_component_cached(
             "kc",
@@ -182,6 +190,10 @@ class MockAPIReadData(MockAPIData):
             emailadres="foo@bar.com",
             telefoonnummer="0612345678",
             toestemmingZaakNotificatiesAlleenDigitaal=False,
+            voornaam="",
+            achternaam="",
+            voorvoegselAchternaam="",
+            bedrijfsnaam="AcmeCorp B.V.",
         )
         self.contactmoment = generate_oas_component_cached(
             "cmc",
