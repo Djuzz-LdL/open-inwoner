@@ -225,7 +225,7 @@ class KvKRequestsInterfaceTest(TestCase):
         self.kvk_client.get_company_headquarters(kvk="69599084")
 
         self.mocked_requests.assert_called_with(
-            f"{self.kvk_client.search_endpoint}?kvkNummer=69599084&type=hoofdvestiging",
+            f"{self.kvk_client.search_endpoint}?kvkNummer=69599084&type=hoofdvestiging&resultatenPerPagina=100",
             headers={"apikey": self.kvk_client.config.api_key},
             cert=self.kvk_client.config.client_certificate.public_certificate.path,
             verify=self.kvk_client.config.server_certificate.public_certificate.path,
@@ -243,7 +243,7 @@ class KvKRequestsInterfaceTest(TestCase):
         self.kvk_client.get_company_headquarters(kvk="69599084")
 
         self.mocked_requests.assert_called_with(
-            f"{self.kvk_client.search_endpoint}?kvkNummer=69599084&type=hoofdvestiging",
+            f"{self.kvk_client.search_endpoint}?kvkNummer=69599084&type=hoofdvestiging&resultatenPerPagina=100",
             headers={"apikey": self.kvk_client.config.api_key},
             cert=(
                 self.kvk_client.config.client_certificate.public_certificate.path,
@@ -262,7 +262,7 @@ class KvKRequestsInterfaceTest(TestCase):
         kvk_client.search(kvkNummer="69599084")
 
         self.mocked_requests.assert_called_with(
-            f"{kvk_client.search_endpoint}?kvkNummer=69599084",
+            f"{kvk_client.search_endpoint}?kvkNummer=69599084&resultatenPerPagina=100",
             headers={"apikey": kvk_client.config.api_key},
             verify=True,
         )
@@ -274,7 +274,7 @@ class KvKRequestsInterfaceTest(TestCase):
         for code in [300, 400, 500]:
             with self.subTest(code=code):
                 mocker.get(
-                    f"{self.kvk_client.search_endpoint}?kvkNummer=69599084",
+                    f"{self.kvk_client.search_endpoint}?kvkNummer=69599084&resultatenPerPagina=100",
                     status_code=code,
                 )
 
