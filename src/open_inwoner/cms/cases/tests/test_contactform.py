@@ -20,7 +20,7 @@ from open_inwoner.accounts.tests.factories import (
     eHerkenningUserFactory,
 )
 from open_inwoner.openklant.constants import Status
-from open_inwoner.openklant.models import OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig
 from open_inwoner.openklant.services import eSuiteVragenService
 from open_inwoner.openklant.tests.data import CONTACTMOMENTEN_ROOT, KLANTEN_ROOT
 from open_inwoner.openzaak.models import CatalogusConfig, OpenZaakConfig
@@ -82,21 +82,21 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         )
         self.oz_config.save()
 
-        # openklant config
-        self.ok_config = OpenKlantConfig.get_solo()
-        self.ok_config.send_email_confirmation = True
-        self.ok_config.register_contact_moment = True
-        self.ok_config.register_bronorganisatie_rsin = "123456788"
-        self.ok_config.register_type = "Melding"
-        self.ok_config.register_employee_id = "FooVonBar"
-        self.ok_config.register_channel = "the-designated-channel"
-        self.ok_config.klanten_service = ServiceFactory(
+        # klant config
+        self.klant_config = ESuiteKlantConfig.get_solo()
+        self.klant_config.send_email_confirmation = True
+        self.klant_config.register_contact_moment = True
+        self.klant_config.register_bronorganisatie_rsin = "123456788"
+        self.klant_config.register_type = "Melding"
+        self.klant_config.register_employee_id = "FooVonBar"
+        self.klant_config.register_channel = "the-designated-channel"
+        self.klant_config.klanten_service = ServiceFactory(
             api_root=KLANTEN_ROOT, api_type=APITypes.kc
         )
-        self.ok_config.contactmomenten_service = ServiceFactory(
+        self.klant_config.contactmomenten_service = ServiceFactory(
             api_root=CONTACTMOMENTEN_ROOT, api_type=APITypes.cmc
         )
-        self.ok_config.save()
+        self.klant_config.save()
 
         self.zaak = generate_oas_component_cached(
             "zrc",
@@ -371,7 +371,7 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        self.assertTrue(self.ok_config.has_api_configuration())
+        self.assertTrue(self.klant_config.has_api_configuration())
 
         response = self.app.get(self.case_detail_url, user=self.user)
         contact_form = response.pyquery("#contact-form")
@@ -387,12 +387,12 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        self.ok_config.register_email = "example@example.com"
-        self.ok_config.register_contact_moment = False
-        self.ok_config.save()
+        self.klant_config.register_email = "example@example.com"
+        self.klant_config.register_contact_moment = False
+        self.klant_config.save()
 
-        self.assertFalse(self.ok_config.has_api_configuration())
-        self.assertTrue(self.ok_config.has_register())
+        self.assertFalse(self.klant_config.has_api_configuration())
+        self.assertTrue(self.klant_config.has_register())
 
         response = self.app.get(self.case_detail_url, user=self.user)
         contact_form = response.pyquery("#contact-form")
@@ -408,11 +408,11 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        self.ok_config.register_email = "example@example.com"
-        self.ok_config.save()
+        self.klant_config.register_email = "example@example.com"
+        self.klant_config.save()
 
-        self.assertTrue(self.ok_config.has_api_configuration())
-        self.assertTrue(self.ok_config.has_register())
+        self.assertTrue(self.klant_config.has_api_configuration())
+        self.assertTrue(self.klant_config.has_register())
 
         response = self.app.get(self.case_detail_url, user=self.user)
         contact_form = response.pyquery("#contact-form")
@@ -428,15 +428,15 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
 
         # reset
-        self.ok_config.klanten_service = None
-        self.ok_config.contactmomenten_service = None
-        self.ok_config.register_email = ""
-        self.ok_config.register_contact_moment = False
-        self.ok_config.register_bronorganisatie_rsin = ""
-        self.ok_config.register_type = ""
-        self.ok_config.register_employee_id = ""
-        self.ok_config.save()
-        self.assertFalse(self.ok_config.has_api_configuration())
+        self.klant_config.klanten_service = None
+        self.klant_config.contactmomenten_service = None
+        self.klant_config.register_email = ""
+        self.klant_config.register_contact_moment = False
+        self.klant_config.register_bronorganisatie_rsin = ""
+        self.klant_config.register_type = ""
+        self.klant_config.register_employee_id = ""
+        self.klant_config.save()
+        self.assertFalse(self.klant_config.has_api_configuration())
 
         response = self.app.get(self.case_detail_url, user=self.user)
         contact_form = response.pyquery("#contact-form")
@@ -529,7 +529,7 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
         # empty id should be excluded from contactmoment_create_data
         config.register_employee_id = ""
         config.save()
@@ -598,7 +598,7 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
                     kvk="12345678", rsin="000000000"
                 )
 
-                config = OpenKlantConfig.get_solo()
+                config = ESuiteKlantConfig.get_solo()
                 config.use_rsin_for_innNnpId_query_parameter = (
                     use_rsin_for_innNnpId_query_parameter
                 )
@@ -665,9 +665,9 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        self.ok_config.register_email = "example@example.com"
-        self.ok_config.register_contact_moment = False
-        self.ok_config.save()
+        self.klant_config.register_email = "example@example.com"
+        self.klant_config.register_contact_moment = False
+        self.klant_config.save()
 
         response = self.app.get(self.case_detail_url, user=self.user)
         form = response.forms["contact-form"]
@@ -708,8 +708,8 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        self.ok_config.register_email = "example@example.com"
-        self.ok_config.save()
+        self.klant_config.register_email = "example@example.com"
+        self.klant_config.save()
 
         response = self.app.get(self.case_detail_url, user=self.user)
         form = response.forms["contact-form"]
@@ -746,7 +746,7 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
         config.send_email_confirmation = True
         config.save()
 
@@ -766,7 +766,7 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
         config.send_email_confirmation = False
         config.save()
 

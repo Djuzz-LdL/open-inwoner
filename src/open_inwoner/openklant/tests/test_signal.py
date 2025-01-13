@@ -8,7 +8,7 @@ from open_inwoner.accounts.choices import LoginTypeChoices, NotificationChannelC
 from open_inwoner.accounts.models import User
 from open_inwoner.accounts.tests.factories import UserFactory, eHerkenningUserFactory
 from open_inwoner.configurations.models import SiteConfiguration
-from open_inwoner.openklant.models import OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig
 from open_inwoner.openklant.tests.data import KLANTEN_ROOT, MockAPIReadData
 from open_inwoner.openzaak.tests.helpers import generate_oas_component_cached
 from open_inwoner.utils.test import (
@@ -175,7 +175,7 @@ class UpdateUserFromLoginSignalAPITestCase(
                 user.save()
                 self.clearTimelineLogs()
 
-                config = OpenKlantConfig.get_solo()
+                config = ESuiteKlantConfig.get_solo()
                 config.use_rsin_for_innNnpId_query_parameter = (
                     use_rsin_for_innNnpId_query_parameter
                 )

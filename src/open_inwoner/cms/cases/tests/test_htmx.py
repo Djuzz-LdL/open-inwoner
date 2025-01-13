@@ -18,7 +18,7 @@ from open_inwoner.accounts.tests.factories import DigidUserFactory
 from open_inwoner.cms.tests import cms_tools
 from open_inwoner.configurations.models import SiteConfiguration
 from open_inwoner.openklant.constants import Status
-from open_inwoner.openklant.models import OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig
 from open_inwoner.openklant.services import eSuiteVragenService
 from open_inwoner.openklant.tests.data import CONTACTMOMENTEN_ROOT, KLANTEN_ROOT
 from open_inwoner.openzaak.models import OpenZaakConfig
@@ -88,19 +88,19 @@ class CasesPlaywrightTests(
         )
         self.oz_config.save()
 
-        # openklant config
-        self.ok_config = OpenKlantConfig.get_solo()
-        self.ok_config.register_contact_moment = True
-        self.ok_config.register_bronorganisatie_rsin = "123456788"
-        self.ok_config.register_type = "Melding"
-        self.ok_config.register_employee_id = "FooVonBar"
-        self.ok_config.klanten_service = ServiceFactory(
+        # klant config
+        self.klant_config = ESuiteKlantConfig.get_solo()
+        self.klant_config.register_contact_moment = True
+        self.klant_config.register_bronorganisatie_rsin = "123456788"
+        self.klant_config.register_type = "Melding"
+        self.klant_config.register_employee_id = "FooVonBar"
+        self.klant_config.klanten_service = ServiceFactory(
             api_root=KLANTEN_ROOT, api_type=APITypes.kc
         )
-        self.ok_config.contactmomenten_service = ServiceFactory(
+        self.klant_config.contactmomenten_service = ServiceFactory(
             api_root=CONTACTMOMENTEN_ROOT, api_type=APITypes.cmc
         )
-        self.ok_config.save()
+        self.klant_config.save()
 
         self.zaak = generate_oas_component_cached(
             "zrc",

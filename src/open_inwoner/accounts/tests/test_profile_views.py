@@ -21,7 +21,7 @@ from open_inwoner.configurations.models import SiteConfiguration
 from open_inwoner.haalcentraal.tests.mixins import HaalCentraalMixin
 from open_inwoner.laposta.models import LapostaConfig
 from open_inwoner.laposta.tests.factories import LapostaListFactory, MemberFactory
-from open_inwoner.openklant.models import OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig
 from open_inwoner.pdc.tests.factories import CategoryFactory
 from open_inwoner.plans.tests.factories import PlanFactory
 from open_inwoner.qmatic.tests.data import QmaticMockData
@@ -598,7 +598,7 @@ class EditProfileTests(AssertTimelineLogMixin, WebTest):
                         m, use_rsin=use_rsin_for_innNnpId_query_parameter
                     )
 
-                    config = OpenKlantConfig.get_solo()
+                    config = ESuiteKlantConfig.get_solo()
                     config.use_rsin_for_innNnpId_query_parameter = (
                         use_rsin_for_innNnpId_query_parameter
                     )

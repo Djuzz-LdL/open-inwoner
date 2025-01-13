@@ -22,7 +22,7 @@ from open_inwoner.openklant.clients import (
     build_klanten_client,
 )
 from open_inwoner.openklant.forms import ContactForm
-from open_inwoner.openklant.models import OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig
 from open_inwoner.openklant.views.utils import generate_question_answer_pair
 from open_inwoner.openklant.wrap import get_fetch_parameters
 from open_inwoner.utils.views import CommonPageMixin, LogMixin
@@ -87,7 +87,7 @@ class ContactFormView(CommonPageMixin, LogMixin, BaseBreadcrumbMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
         context["has_form_configuration"] = config.has_form_configuration()
         return context
 
@@ -102,7 +102,7 @@ class ContactFormView(CommonPageMixin, LogMixin, BaseBreadcrumbMixin, FormView):
             )
 
     def form_valid(self, form: ContactForm):
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
 
         email_success = False
         api_success = False
@@ -171,7 +171,7 @@ class ContactFormView(CommonPageMixin, LogMixin, BaseBreadcrumbMixin, FormView):
     def register_contactmoment_by_api(
         self,
         form: ContactForm,
-        klanten_config: OpenKlantConfig,
+        klanten_config: ESuiteKlantConfig,
     ) -> tuple[bool, str]:
         assert klanten_config.has_api_configuration()
 
@@ -231,7 +231,7 @@ class ContactFormView(CommonPageMixin, LogMixin, BaseBreadcrumbMixin, FormView):
     def _create_contactmoment(
         self,
         form_data: dict,
-        klanten_config: OpenKlantConfig,
+        klanten_config: ESuiteKlantConfig,
         klant: Klant | None = None,
     ):
         if not (contactmoment_client := build_contactmomenten_client()):

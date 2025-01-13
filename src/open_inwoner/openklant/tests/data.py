@@ -6,7 +6,7 @@ from open_inwoner.accounts.tests.factories import (
     eHerkenningUserFactory,
 )
 from open_inwoner.openklant.constants import Status
-from open_inwoner.openklant.models import OpenKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig
 from open_inwoner.openzaak.tests.factories import (
     ServiceFactory,
     ZGWApiGroupConfigFactory,
@@ -23,7 +23,7 @@ CONTACTMOMENTEN_ROOT = "https://contactmomenten.nl/api/v1/"
 class MockAPIData:
     @classmethod
     def setUpServices(cls):
-        config = OpenKlantConfig.get_solo()
+        config = ESuiteKlantConfig.get_solo()
         config.klanten_service = ServiceFactory(
             api_root=KLANTEN_ROOT, api_type=APITypes.kc
         )
