@@ -92,7 +92,6 @@ certifi==2023.11.17
     # via
     #   -c requirements/base.txt
     #   -r requirements/base.txt
-    #   django-simple-certmanager
     #   elastic-apm
     #   elasticsearch
     #   requests
@@ -315,7 +314,7 @@ django-csp-reports==1.8.1
     # via
     #   -c requirements/base.txt
     #   -r requirements/base.txt
-django-digid-eherkenning[oidc]==0.16.0
+django-digid-eherkenning[oidc]==0.19.2
     # via
     #   -c requirements/base.txt
     #   -r requirements/base.txt
@@ -444,7 +443,7 @@ django-setup-configuration==0.5.0
     #   -c requirements/base.txt
     #   -r requirements/base.txt
     #   mozilla-django-oidc-db
-django-simple-certmanager==1.4.1
+django-simple-certmanager==2.4.1
     # via
     #   -c requirements/base.txt
     #   -r requirements/base.txt
@@ -890,7 +889,6 @@ pyopenssl==24.0.0
     #   -c requirements/base.txt
     #   -r requirements/base.txt
     #   -r requirements/test-tools.in
-    #   django-simple-certmanager
     #   josepy
     #   webauthn
 pyphen==0.12.0
