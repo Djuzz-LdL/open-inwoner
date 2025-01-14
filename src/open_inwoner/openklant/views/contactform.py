@@ -22,7 +22,7 @@ from open_inwoner.openklant.clients import (
     build_klanten_client,
 )
 from open_inwoner.openklant.forms import ContactForm
-from open_inwoner.openklant.models import ESuiteKlantConfig
+from open_inwoner.openklant.models import ESuiteKlantConfig, KlantenSysteemConfig
 from open_inwoner.openklant.views.utils import generate_question_answer_pair
 from open_inwoner.openklant.wrap import get_fetch_parameters
 from open_inwoner.utils.views import CommonPageMixin, LogMixin
@@ -87,8 +87,8 @@ class ContactFormView(CommonPageMixin, LogMixin, BaseBreadcrumbMixin, FormView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        config = ESuiteKlantConfig.get_solo()
-        context["has_form_configuration"] = config.has_form_configuration()
+        config = KlantenSysteemConfig.get_solo()
+        context["has_form_configuration"] = config.has_contactform_configuration
         return context
 
     def set_result_message(self, success: bool):

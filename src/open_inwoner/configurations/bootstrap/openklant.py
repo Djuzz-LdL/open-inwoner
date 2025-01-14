@@ -9,7 +9,11 @@ from zgw_consumers.constants import APITypes
 from zgw_consumers.models import Service
 
 from open_inwoner.configurations.bootstrap.utils import get_service
-from open_inwoner.openklant.models import ESuiteKlantConfig, OpenKlant2Config
+from open_inwoner.openklant.models import (
+    ESuiteKlantConfig,
+    KlantenSysteemConfig,
+    OpenKlant2Config,
+)
 
 
 class OpenKlant2Configuration(ConfigurationModel):
@@ -41,13 +45,22 @@ class KlantenApiConfigurationModel(ConfigurationModel):
     class Meta:
         django_model_refs = {
             ESuiteKlantConfig: (
-                "register_email",
-                "register_contact_moment",
                 "register_bronorganisatie_rsin",
                 "register_channel",
                 "register_type",
                 "register_employee_id",
                 "use_rsin_for_innNnpId_query_parameter",
+            )
+        }
+
+
+class KlantSysteemConfigurationModel(ConfigurationModel):
+    class Meta:
+        django_model_refs = {
+            KlantenSysteemConfig: (
+                "primary_backend",
+                "register_contact_via_api",
+                "register_contact_email",
                 "send_email_confirmation",
             )
         }
@@ -58,9 +71,9 @@ class ESuiteKlantConfigurationStep(BaseConfigurationStep[KlantenApiConfiguration
     Configure the KIC settings and set any feature flags or other options if specified
     """
 
-    verbose_name = "Klantinteractie APIs configuration"
-    enable_setting = "openklant_config_enable"
-    namespace = "openklant_config"
+    verbose_name = "eSuite Klant APIs configuration"
+    enable_setting = "esuiteklant_config_enable"
+    namespace = "esuiteklant_config"
     config_model = KlantenApiConfigurationModel
 
     def execute(self, model: KlantenApiConfigurationModel):
@@ -139,3 +152,10 @@ class OpenKlant2ConfigurationStep(BaseConfigurationStep[OpenKlant2Configuration]
 
         config.full_clean()
         config.save()
+
+
+# TODO: complete config step
+class KlantSysteemConfigurationStep(
+    BaseConfigurationStep[KlantSysteemConfigurationModel]
+):
+    pass

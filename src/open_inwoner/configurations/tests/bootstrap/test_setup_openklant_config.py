@@ -43,8 +43,6 @@ class ESuiteKlantConfigurationStepTestCase(TestCase):
         self.assertEqual(config.klanten_service, kc)
         self.assertEqual(config.contactmomenten_service, cmc)
 
-        self.assertEqual(config.register_email, "admin@oip.org")
-        self.assertEqual(config.register_contact_moment, True)
         self.assertEqual(config.register_bronorganisatie_rsin, "837194569")
         self.assertEqual(config.register_channel, "email")
         self.assertEqual(config.register_type, "bericht")
@@ -149,8 +147,8 @@ class ESuiteKlantConfigurationStepTestCase(TestCase):
             self.assertEqual(config.klanten_service, kc)
             self.assertEqual(config.contactmomenten_service, cmc)
 
-            self.assertEqual(config.register_email, "admin@oip.org")
-            self.assertEqual(config.register_contact_moment, True)
+            # self.assertEqual(config.register_email, "admin@oip.org")
+            # self.assertEqual(config.register_contact_moment, True)
             self.assertEqual(config.register_bronorganisatie_rsin, "837194569")
             self.assertEqual(config.register_channel, "email")
             self.assertEqual(config.register_type, "bericht")
@@ -164,8 +162,8 @@ class ESuiteKlantConfigurationStepTestCase(TestCase):
         assert_values()
 
         config = ESuiteKlantConfig.get_solo()
-        config.register_email = "not-admin@oip.org"
-        config.register_contact_moment = False
+        # config.register_email = "not-admin@oip.org"
+        # config.register_contact_moment = False
         config.register_bronorganisatie_rsin = "800000009"
         config.register_channel = "not-email"
         config.register_type = "not-bericht"

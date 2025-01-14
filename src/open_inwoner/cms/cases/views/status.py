@@ -32,7 +32,11 @@ from zgw_consumers.api_models.constants import RolOmschrijving
 from open_inwoner.accounts.models import User
 from open_inwoner.mail.service import send_contact_confirmation_mail
 from open_inwoner.openklant.constants import KlantenServiceType
-from open_inwoner.openklant.models import ESuiteKlantConfig
+from open_inwoner.openklant.models import (
+    ESuiteKlantConfig,
+    KlantenSysteemConfig,
+    OpenKlant2Config,
+)
 from open_inwoner.openklant.services import (
     OpenKlant2Service,
     Question,
@@ -513,7 +517,7 @@ class InnerCaseDetailView(
         if not case:
             return {}
 
-        open_klant_config = ESuiteKlantConfig.get_solo()
+        klanten_config = KlantenSysteemConfig.get_solo()
 
         case_type_config_description = ""
         case_type_document_upload_description = ""
@@ -558,7 +562,7 @@ class InnerCaseDetailView(
             and not getattr(self.case, "einddatum", None),
             "external_upload_url": external_upload_url,
             "contact_form_enabled": (
-                contact_form_enabled and open_klant_config.has_register()
+                contact_form_enabled and klanten_config.contact_registration_enabled
             ),
         }
 
@@ -909,23 +913,25 @@ class CaseContactFormView(CaseAccessMixin, LogMixin, FormView):
         form = self.get_form()
 
         if form.is_valid():
-            config = ESuiteKlantConfig.get_solo()
+            klant_config = KlantenSysteemConfig.get_solo()
 
             email_success = False
             api_success = False
             send_confirmation = False
 
-            if config.register_email:
+            if klant_config.register_contact_email:
                 form.cleaned_data[
                     "question"
                 ] += f"\n\nCase number: {self.case.identificatie}"
-                email_success = self.register_by_email(form, config.register_email)
+                email_success = self.register_by_email(
+                    form, klant_config.register_contact_email
+                )
                 send_confirmation = email_success
 
-            if config.register_contact_moment:
-                api_success = self.register_by_api(form, config)
+            if klant_config.register_contact_via_api:
+                api_success = self.register_by_api(form, config=klant_config)
                 if api_success:
-                    send_confirmation = config.send_email_confirmation
+                    send_confirmation = klant_config.send_email_confirmation
                 # else keep the send_confirmation if email set it
 
             if send_confirmation:
@@ -990,7 +996,15 @@ class CaseContactFormView(CaseAccessMixin, LogMixin, FormView):
             )
             return False
 
-    def register_by_api(self, form, config: ESuiteKlantConfig):
+    def register_by_api(self, form, config: KlantenSysteemConfig):
+        if config.primary_backend == KlantenServiceType.ESUITE.value:
+            return self._register_via_esuite(form, config=ESuiteKlantConfig.get_solo())
+        return self._register_via_openklant2(form, config=OpenKlant2Config.get_solo())
+
+    def _register_via_openklant2(self, form, config: OpenKlant2Config):
+        pass
+
+    def _register_via_esuite(self, form, config: ESuiteKlantConfig):
         assert config.has_api_configuration()
 
         try:

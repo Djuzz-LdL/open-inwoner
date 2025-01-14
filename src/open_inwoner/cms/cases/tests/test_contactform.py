@@ -19,8 +19,8 @@ from open_inwoner.accounts.tests.factories import (
     DigidUserFactory,
     eHerkenningUserFactory,
 )
-from open_inwoner.openklant.constants import Status
-from open_inwoner.openklant.models import ESuiteKlantConfig
+from open_inwoner.openklant.constants import KlantenServiceType, Status
+from open_inwoner.openklant.models import ESuiteKlantConfig, KlantenSysteemConfig
 from open_inwoner.openklant.services import eSuiteVragenService
 from open_inwoner.openklant.tests.data import CONTACTMOMENTEN_ROOT, KLANTEN_ROOT
 from open_inwoner.openzaak.models import CatalogusConfig, OpenZaakConfig
@@ -82,21 +82,25 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         )
         self.oz_config.save()
 
-        # klant config
-        self.klant_config = ESuiteKlantConfig.get_solo()
+        # klant configurations
+        self.klant_config = KlantenSysteemConfig.get_solo()
+        self.klant_config.primary_backend = KlantenServiceType.ESUITE.value
+        self.klant_config.register_contact_via_api = True
         self.klant_config.send_email_confirmation = True
-        self.klant_config.register_contact_moment = True
-        self.klant_config.register_bronorganisatie_rsin = "123456788"
-        self.klant_config.register_type = "Melding"
-        self.klant_config.register_employee_id = "FooVonBar"
-        self.klant_config.register_channel = "the-designated-channel"
-        self.klant_config.klanten_service = ServiceFactory(
+        self.klant_config.save()
+
+        self.esuite_config = ESuiteKlantConfig.get_solo()
+        self.esuite_config.register_bronorganisatie_rsin = "123456788"
+        self.esuite_config.register_type = "Melding"
+        self.esuite_config.register_employee_id = "FooVonBar"
+        self.esuite_config.register_channel = "the-designated-channel"
+        self.esuite_config.klanten_service = ServiceFactory(
             api_root=KLANTEN_ROOT, api_type=APITypes.kc
         )
-        self.klant_config.contactmomenten_service = ServiceFactory(
+        self.esuite_config.contactmomenten_service = ServiceFactory(
             api_root=CONTACTMOMENTEN_ROOT, api_type=APITypes.cmc
         )
-        self.klant_config.save()
+        self.esuite_config.save()
 
         self.zaak = generate_oas_component_cached(
             "zrc",
@@ -371,7 +375,7 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        self.assertTrue(self.klant_config.has_api_configuration())
+        self.assertTrue(self.klant_config.has_api_configuration)
 
         response = self.app.get(self.case_detail_url, user=self.user)
         contact_form = response.pyquery("#contact-form")
@@ -387,12 +391,14 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        self.klant_config.register_email = "example@example.com"
-        self.klant_config.register_contact_moment = False
+        self.esuite_config.klanten_service = None
+        self.esuite_config.save()
+
+        self.klant_config.register_contact_email = "example@example.com"
         self.klant_config.save()
 
-        self.assertFalse(self.klant_config.has_api_configuration())
-        self.assertTrue(self.klant_config.has_register())
+        self.assertFalse(self.klant_config.has_api_configuration)
+        self.assertTrue(self.klant_config.contact_registration_enabled)
 
         response = self.app.get(self.case_detail_url, user=self.user)
         contact_form = response.pyquery("#contact-form")
@@ -411,8 +417,8 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self.klant_config.register_email = "example@example.com"
         self.klant_config.save()
 
-        self.assertTrue(self.klant_config.has_api_configuration())
-        self.assertTrue(self.klant_config.has_register())
+        self.assertTrue(self.klant_config.has_api_configuration)
+        self.assertTrue(self.klant_config.contact_registration_enabled)
 
         response = self.app.get(self.case_detail_url, user=self.user)
         contact_form = response.pyquery("#contact-form")
@@ -428,15 +434,14 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
 
         # reset
-        self.klant_config.klanten_service = None
-        self.klant_config.contactmomenten_service = None
-        self.klant_config.register_email = ""
-        self.klant_config.register_contact_moment = False
-        self.klant_config.register_bronorganisatie_rsin = ""
-        self.klant_config.register_type = ""
-        self.klant_config.register_employee_id = ""
-        self.klant_config.save()
-        self.assertFalse(self.klant_config.has_api_configuration())
+        self.esuite_config.klanten_service = None
+        self.esuite_config.contactmomenten_service = None
+        self.esuite_config.register_bronorganisatie_rsin = ""
+        self.esuite_config.register_type = ""
+        self.esuite_config.register_employee_id = ""
+        self.esuite_config.save()
+
+        self.assertFalse(self.klant_config.has_api_configuration)
 
         response = self.app.get(self.case_detail_url, user=self.user)
         contact_form = response.pyquery("#contact-form")
@@ -665,8 +670,8 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        self.klant_config.register_email = "example@example.com"
-        self.klant_config.register_contact_moment = False
+        self.klant_config.register_contact_email = "example@example.com"
+        self.klant_config.register_contact_via_api = False
         self.klant_config.save()
 
         response = self.app.get(self.case_detail_url, user=self.user)
@@ -708,7 +713,7 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        self.klant_config.register_email = "example@example.com"
+        self.klant_config.register_contact_email = "example@example.com"
         self.klant_config.save()
 
         response = self.app.get(self.case_detail_url, user=self.user)
@@ -746,7 +751,7 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        config = ESuiteKlantConfig.get_solo()
+        config = KlantenSysteemConfig.get_solo()
         config.send_email_confirmation = True
         config.save()
 
@@ -766,7 +771,7 @@ class CasesContactFormTestCase(AssertMockMatchersMixin, ClearCachesMixin, WebTes
         self._setUpMocks(m)
         self._setUpExtraMocks(m)
 
-        config = ESuiteKlantConfig.get_solo()
+        config = KlantenSysteemConfig.get_solo()
         config.send_email_confirmation = False
         config.save()
 
