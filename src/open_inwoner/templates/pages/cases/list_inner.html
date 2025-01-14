@@ -16,7 +16,11 @@
         </div>
         <div class="filter-bar__mobile-button">
             <p class="utrecht-paragraph filter-bar__heading">Filters</p>
-            {% button icon="filter_alt" text=_("Filters") icon_outlined=True transparent=True extra_classes="show-modal" %}
+            <div class="filter-bar__mobile-selection" id="selectionFilterBar">
+                {% button icon="filter_alt" text=_("Filters") icon_outlined=True transparent=True extra_classes="show-modal" %}
+                {% icon icon="check" icon_position="after" outlined=True %}
+                <span class="sr-only">Gekozen filters</span>
+            </div>
             <p class="utrecht-paragraph filter-bar__status-text">Status</p>
         </div>
         <form class="form filter-bar__form" method="GET" id="filter-form" novalidate>
