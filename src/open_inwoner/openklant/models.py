@@ -108,9 +108,6 @@ class ESuiteKlantConfig(SingletonModel):
     class Meta:
         verbose_name = _("eSuite Klant configuration")
 
-    def has_form_configuration(self) -> bool:
-        return self.has_api_configuration() and self.contactformsubject_set.exists()
-
     def has_api_configuration(self):
         return all(getattr(self, f, "") for f in self.register_api_required_fields)
 
@@ -292,7 +289,7 @@ class KlantenSysteemConfig(SingletonModel):
             return esuite_config.has_api_configuration()
 
         # TODO: support `has_api_configuration` check for OK2?
-        return True
+        return False
 
     @property
     def contact_registration_enabled(self) -> bool:

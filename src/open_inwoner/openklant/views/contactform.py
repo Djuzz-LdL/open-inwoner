@@ -21,8 +21,13 @@ from open_inwoner.openklant.clients import (
     build_contactmomenten_client,
     build_klanten_client,
 )
+from open_inwoner.openklant.constants import KlantenServiceType
 from open_inwoner.openklant.forms import ContactForm
-from open_inwoner.openklant.models import ESuiteKlantConfig, KlantenSysteemConfig
+from open_inwoner.openklant.models import (
+    ESuiteKlantConfig,
+    KlantenSysteemConfig,
+    OpenKlant2Config,
+)
 from open_inwoner.openklant.views.utils import generate_question_answer_pair
 from open_inwoner.openklant.wrap import get_fetch_parameters
 from open_inwoner.utils.views import CommonPageMixin, LogMixin
@@ -102,23 +107,19 @@ class ContactFormView(CommonPageMixin, LogMixin, BaseBreadcrumbMixin, FormView):
             )
 
     def form_valid(self, form: ContactForm):
-        config = ESuiteKlantConfig.get_solo()
+        config = KlantenSysteemConfig.get_solo()
 
         email_success = False
         api_success = False
         send_confirmation = False
         api_user_email = None
 
-        if config.register_email:
-            email_success = self.register_contactmoment_by_email(
-                form, config.register_email
-            )
+        if config.register_contact_email:
+            email_success = self.register_by_email(form, config.register_contact_email)
             send_confirmation = email_success
 
-        if config.register_contact_moment:
-            api_success, api_user_email = self.register_contactmoment_by_api(
-                form, config
-            )
+        if config.register_contact_via_api:
+            api_success, api_user_email = self.register_by_api(form, config)
             if api_success:
                 send_confirmation = config.send_email_confirmation
             # else keep the send_confirmation if email set it
@@ -138,7 +139,7 @@ class ContactFormView(CommonPageMixin, LogMixin, BaseBreadcrumbMixin, FormView):
 
         return super().form_valid(form)
 
-    def register_contactmoment_by_email(self, form: ContactForm, recipient_email: str):
+    def register_by_email(self, form: ContactForm, recipient_email: str):
         template = find_template("contactform_registration")
 
         context = {
@@ -168,19 +169,30 @@ class ContactFormView(CommonPageMixin, LogMixin, BaseBreadcrumbMixin, FormView):
             )
             return False
 
-    def register_contactmoment_by_api(
+    def register_by_api(self, form, config: KlantenSysteemConfig):
+        if config.primary_backend == KlantenServiceType.ESUITE.value:
+            return self._register_via_esuite(
+                form, esuite_config=ESuiteKlantConfig.get_solo()
+            )
+        return self._register_via_openklant2(form, config=OpenKlant2Config.get_solo())
+
+    # TODO
+    def _register_via_openklant2(self, form: ContactForm, config: OpenKlant2Config):
+        raise NotImplementedError
+
+    def _register_via_esuite(
         self,
         form: ContactForm,
-        klanten_config: ESuiteKlantConfig,
+        esuite_config: ESuiteKlantConfig,
     ) -> tuple[bool, str]:
-        assert klanten_config.has_api_configuration()
+        assert esuite_config.has_api_configuration()
 
         klant = self._fetch_klant()
         if klant:
             self._update_klant_with_form_data(klant, form.cleaned_data)
 
         contactmoment = self._create_contactmoment(
-            form.cleaned_data, klanten_config, klant
+            form.cleaned_data, esuite_config, klant
         )
 
         if not contactmoment:

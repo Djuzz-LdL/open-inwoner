@@ -1001,8 +1001,9 @@ class CaseContactFormView(CaseAccessMixin, LogMixin, FormView):
             return self._register_via_esuite(form, config=ESuiteKlantConfig.get_solo())
         return self._register_via_openklant2(form, config=OpenKlant2Config.get_solo())
 
+    # TODO
     def _register_via_openklant2(self, form, config: OpenKlant2Config):
-        pass
+        raise NotImplementedError
 
     def _register_via_esuite(self, form, config: ESuiteKlantConfig):
         assert config.has_api_configuration()

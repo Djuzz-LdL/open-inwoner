@@ -57,6 +57,7 @@ class ContactForm(forms.Form):
         self.user = user
         self.request_session = request_session
 
+        # TODO: check for primary_backend? What in case of OK2?
         config = ESuiteKlantConfig.get_solo()
         self.fields["subject"].queryset = config.contactformsubject_set.all()
 

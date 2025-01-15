@@ -11,7 +11,8 @@ from django_webtest import WebTest
 
 from open_inwoner.accounts.tests.factories import UserFactory
 from open_inwoner.openklant.api_models import KlantContactRol
-from open_inwoner.openklant.models import ESuiteKlantConfig
+from open_inwoner.openklant.constants import KlantenServiceType
+from open_inwoner.openklant.models import ESuiteKlantConfig, KlantenSysteemConfig
 from open_inwoner.openklant.tests.data import MockAPICreateData
 from open_inwoner.openklant.tests.factories import ContactFormSubjectFactory
 from open_inwoner.openklant.views.contactform import ContactFormView
@@ -50,17 +51,20 @@ class ContactFormIntegrationTest(
 
     def setUp(self):
         super().setUp()
-        # clear config
-        config = ESuiteKlantConfig.get_solo()
-        config.klanten_service = None
-        config.contactmomenten_service = None
-        config.register_email = ""
-        config.register_contact_moment = False
-        config.register_bronorganisatie_rsin = ""
-        config.register_type = ""
-        config.register_employee_id = ""
-        config.send_email_confirmation = True
-        config.save()
+        # clear esuite_config
+        esuite_config = ESuiteKlantConfig.get_solo()
+        esuite_config.klanten_service = None
+        esuite_config.contactmomenten_service = None
+        esuite_config.register_bronorganisatie_rsin = ""
+        esuite_config.register_type = ""
+        esuite_config.register_employee_id = ""
+        esuite_config.send_email_confirmation = True
+        esuite_config.save()
+
+        klant_config = KlantenSysteemConfig.get_solo()
+        klant_config.primary_backend = KlantenServiceType.ESUITE.value
+        klant_config.register_contact_email = ""
+        klant_config.save()
 
         # bypass CMS for rendering form template directly via ContactFormView
         ContactFormView.template_name = "pages/contactform/form.html"
@@ -69,36 +73,40 @@ class ContactFormIntegrationTest(
         self, m, mock_captcha, mock_send_confirm
     ):
         # use cleared (from setUp()
-        config = ESuiteKlantConfig.get_solo()
-        self.assertFalse(config.has_form_configuration())
+        klant_config = KlantenSysteemConfig.get_solo()
+        esuite_config = ESuiteKlantConfig.get_solo()
 
-        ContactFormSubjectFactory(config=config)
+        self.assertFalse(klant_config.has_contactform_configuration)
 
-        # email and subject
-        config.register_email = "example@example.com"
-        self.assertTrue(config.has_form_configuration())
+        # set email on glogal config and create subject for eSuite backend
+        klant_config.register_contact_email = "example@example.com"
+        ContactFormSubjectFactory(config=esuite_config)
+
+        self.assertTrue(klant_config.has_contactform_configuration)
 
         # subject but nothing else
-        config.register_email = ""
-        self.assertFalse(config.has_form_configuration())
+        klant_config.register_contact_email = ""
+        self.assertFalse(klant_config.has_contactform_configuration)
 
         # API and subject
-        config.register_contact_moment = True
-        config.register_bronorganisatie_rsin = "0123456789"
-        config.klanten_service = ServiceFactory()
-        config.contactmomenten_service = ServiceFactory()
-        config.register_type = "Melding"
-        config.register_employee_id = "FooVonBar"
-        self.assertTrue(config.has_form_configuration())
+        esuite_config.register_contact_moment = True
+        esuite_config.register_bronorganisatie_rsin = "123456789"
+        esuite_config.klanten_service = ServiceFactory()
+        esuite_config.contactmomenten_service = ServiceFactory()
+        esuite_config.register_type = "Melding"
+        esuite_config.register_employee_id = "FooVonBar"
+        esuite_config.save()
+
+        self.assertTrue(klant_config.has_contactform_configuration)
 
         mock_send_confirm.assert_not_called()
 
-    def test_no_form_shown_if_not_has_configuration(
+    def test_no_form_shown_if_no_contactform_configuration(
         self, m, mock_captcha, mock_send_confirm
     ):
         # set nothing
-        config = ESuiteKlantConfig.get_solo()
-        self.assertFalse(config.has_form_configuration())
+        klant_config = KlantenSysteemConfig.get_solo()
+        self.assertFalse(klant_config.has_contactform_configuration)
 
         response = self.app.get(self.url)
         self.assertContains(response, _("Contact formulier niet geconfigureerd."))
@@ -107,9 +115,11 @@ class ContactFormIntegrationTest(
     def test_anon_form_requires_either_email_or_phonenumber(
         self, m, mock_captcha, mock_send_confirm
     ):
-        config = ESuiteKlantConfig.get_solo()
-        config.register_email = "example@example.com"
+        config = KlantenSysteemConfig.get_solo()
+        config.register_contact_email = "example@example.com"
         config.save()
+
+        config = ESuiteKlantConfig.get_solo()
         subject = ContactFormSubjectFactory(config=config)
 
         response = self.app.get(self.url)
@@ -145,9 +155,12 @@ class ContactFormIntegrationTest(
     def test_regular_auth_form_fills_email_and_phonenumber(
         self, m, mock_captcha, mock_send_confirm
     ):
-        config = ESuiteKlantConfig.get_solo()
-        config.register_email = "example@example.com"
+        config = KlantenSysteemConfig.get_solo()
+        config.primary_backend = KlantenServiceType.ESUITE.value
+        config.register_contact_email = "example@example.com"
         config.save()
+
+        config = ESuiteKlantConfig.get_solo()
         subject = ContactFormSubjectFactory(config=config)
 
         user = UserFactory()
@@ -170,9 +183,12 @@ class ContactFormIntegrationTest(
     def test_expected_ordered_subjects_are_shown(
         self, m, mock_captcha, mock_send_confirm
     ):
-        config = ESuiteKlantConfig.get_solo()
-        config.register_email = "example@example.com"
+        config = KlantenSysteemConfig.get_solo()
+        config.primary_backend = KlantenServiceType.ESUITE.value
+        config.register_contact_email = "example@example.com"
         config.save()
+
+        config = ESuiteKlantConfig.get_solo()
         subject_1 = ContactFormSubjectFactory(config=config)
         subject_2 = ContactFormSubjectFactory(config=config)
 
@@ -207,11 +223,13 @@ class ContactFormIntegrationTest(
         mock_send_confirm.assert_not_called()
 
     def test_register_contactmoment_via_email(self, m, mock_captcha, mock_send_confirm):
-        config = ESuiteKlantConfig.get_solo()
-        config.register_email = "example@example.com"
-        config.has_form_configuration = True
+        config = KlantenSysteemConfig.get_solo()
+        config.primary_backend = KlantenServiceType.ESUITE.value
+        config.register_contact_email = "example@example.com"
         config.save()
-        subject = ContactFormSubjectFactory(config=config)
+
+        esuite_config = ESuiteKlantConfig.get_solo()
+        subject = ContactFormSubjectFactory(config=esuite_config)
 
         response = self.app.get(self.url)
         form = response.forms["contactmoment-form"]
@@ -252,18 +270,23 @@ class ContactFormIntegrationTest(
     ):
         MockAPICreateData.setUpServices()
 
-        config = ESuiteKlantConfig.get_solo()
-        config.register_contact_moment = True
-        config.register_bronorganisatie_rsin = "123456789"
-        config.register_type = "Melding"
-        config.register_employee_id = "FooVonBar"
+        config = KlantenSysteemConfig.get_solo()
+        config.primary_backend = KlantenServiceType.ESUITE.value
+        config.register_contact_via_api = True
+        config.send_email_confirmation = True
         config.save()
+
+        esuite_config = ESuiteKlantConfig.get_solo()
+        esuite_config.register_bronorganisatie_rsin = "123456789"
+        esuite_config.register_type = "Melding"
+        esuite_config.register_employee_id = "FooVonBar"
+        esuite_config.save()
 
         data = MockAPICreateData()
         data.install_mocks_anon(m)
 
         subject = ContactFormSubjectFactory(
-            config=config,
+            config=esuite_config,
             subject="Aanvraag document",
             subject_code="afdeling-xyz",
         )
@@ -319,20 +342,24 @@ class ContactFormIntegrationTest(
         # we need to patch the captcha Q&A twice because they are re-generated by the form
         mock_captcha2.return_value = ("", 42)
 
-        config = ESuiteKlantConfig.get_solo()
-        config.register_contact_moment = True
-        config.register_bronorganisatie_rsin = "123456789"
-        config.register_type = "Melding"
-        config.register_channel = "contactformulier"
-        config.register_employee_id = "FooVonBar"
+        config = KlantenSysteemConfig.get_solo()
+        config.primary_backend = KlantenServiceType.ESUITE.value
+        config.register_contact_via_api = True
         config.save()
+
+        esuite_config = ESuiteKlantConfig.get_solo()
+        esuite_config.register_bronorganisatie_rsin = "123456789"
+        esuite_config.register_type = "Melding"
+        esuite_config.register_channel = "contactformulier"
+        esuite_config.register_employee_id = "FooVonBar"
+        esuite_config.save()
 
         MockAPICreateData.setUpServices()
         data = MockAPICreateData()
         data.install_mocks_anon_without_klant(m)
 
         subject = ContactFormSubjectFactory(
-            config=config,
+            config=esuite_config,
             subject="Aanvraag document",
             subject_code="afdeling-xyz",
         )
@@ -379,18 +406,23 @@ class ContactFormIntegrationTest(
     ):
         MockAPICreateData.setUpServices()
 
-        config = ESuiteKlantConfig.get_solo()
-        config.register_contact_moment = True
-        config.register_bronorganisatie_rsin = "123456789"
-        config.register_type = "Melding"
-        config.register_employee_id = "FooVonBar"
+        config = KlantenSysteemConfig.get_solo()
+        config.primary_backend = KlantenServiceType.ESUITE.value
+        config.register_contact_via_api = True
+        config.send_email_confirmation = True
         config.save()
+
+        esuite_config = ESuiteKlantConfig.get_solo()
+        esuite_config.register_bronorganisatie_rsin = "123456789"
+        esuite_config.register_type = "Melding"
+        esuite_config.register_employee_id = "FooVonBar"
+        esuite_config.save()
 
         data = MockAPICreateData()
         data.install_mocks_digid(m)
 
         subject = ContactFormSubjectFactory(
-            config=config,
+            config=esuite_config,
             subject="Aanvraag document",
             subject_code="afdeling-xyz",
         )
@@ -455,19 +487,23 @@ class ContactFormIntegrationTest(
     ):
         MockAPICreateData.setUpServices()
 
-        config = ESuiteKlantConfig.get_solo()
-        config.register_contact_moment = True
-        config.register_bronorganisatie_rsin = "123456789"
-        config.register_type = "Melding"
-        # empty id should be excluded from contactmoment_create_data
-        config.register_employee_id = ""
+        config = KlantenSysteemConfig.get_solo()
+        config.primary_backend = KlantenServiceType.ESUITE.value
+        config.register_contact_via_api = True
         config.save()
+
+        esuite_config = ESuiteKlantConfig.get_solo()
+        esuite_config.register_bronorganisatie_rsin = "123456789"
+        esuite_config.register_type = "Melding"
+        # empty id should be excluded from contactmoment_create_data
+        esuite_config.register_employee_id = ""
+        esuite_config.save()
 
         data = MockAPICreateData()
         data.install_mocks_digid(m)
 
         subject = ContactFormSubjectFactory(
-            config=config,
+            config=esuite_config,
             subject="Aanvraag document",
             subject_code="afdeling-xyz",
         )
@@ -508,12 +544,17 @@ class ContactFormIntegrationTest(
     ):
         MockAPICreateData.setUpServices()
 
-        config = ESuiteKlantConfig.get_solo()
-        config.register_contact_moment = True
-        config.register_bronorganisatie_rsin = "123456789"
-        config.register_type = "Melding"
-        config.register_employee_id = "FooVonBar"
+        config = KlantenSysteemConfig.get_solo()
+        config.primary_backend = KlantenServiceType.ESUITE.value
+        config.register_contact_via_api = True
+        config.send_email_confirmation = True
         config.save()
+
+        esuite_config = ESuiteKlantConfig.get_solo()
+        esuite_config.register_bronorganisatie_rsin = "123456789"
+        esuite_config.register_type = "Melding"
+        esuite_config.register_employee_id = "FooVonBar"
+        esuite_config.save()
 
         for use_rsin_for_innNnpId_query_parameter in [True, False]:
             with self.subTest(
@@ -523,10 +564,10 @@ class ContactFormIntegrationTest(
                 # `m` is overridden somewhere, which causes issues when `MockAPIData.setUpOASMocks`
                 # is run for the second time
                 with requests_mock.Mocker() as m:
-                    config.use_rsin_for_innNnpId_query_parameter = (
+                    esuite_config.use_rsin_for_innNnpId_query_parameter = (
                         use_rsin_for_innNnpId_query_parameter
                     )
-                    config.save()
+                    esuite_config.save()
 
                     data = MockAPICreateData()
                     data.install_mocks_eherkenning(
@@ -534,7 +575,7 @@ class ContactFormIntegrationTest(
                     )
 
                     subject = ContactFormSubjectFactory(
-                        config=config,
+                        config=esuite_config,
                         subject="Aanvraag document",
                         subject_code="afdeling-xyz",
                     )
@@ -613,18 +654,23 @@ class ContactFormIntegrationTest(
     ):
         MockAPICreateData.setUpServices()
 
-        config = ESuiteKlantConfig.get_solo()
-        config.register_contact_moment = True
-        config.register_bronorganisatie_rsin = "123456789"
-        config.register_type = "Melding"
-        config.register_employee_id = "FooVonBar"
+        config = KlantenSysteemConfig.get_solo()
+        config.primary_backend = KlantenServiceType.ESUITE.value
+        config.register_contact_via_api = True
+        config.send_email_confirmation = True
         config.save()
+
+        esuite_config = ESuiteKlantConfig.get_solo()
+        esuite_config.register_bronorganisatie_rsin = "123456789"
+        esuite_config.register_type = "Melding"
+        esuite_config.register_employee_id = "FooVonBar"
+        esuite_config.save()
 
         data = MockAPICreateData()
         data.install_mocks_digid_missing_contact_info(m)
 
         subject = ContactFormSubjectFactory(
-            config=config,
+            config=esuite_config,
             subject="Aanvraag document",
             subject_code="afdeling-xyz",
         )
@@ -702,8 +748,13 @@ class ContactFormIntegrationTest(
         # we need to patch the captcha Q&A twice because they are re-generated by the form
         mock_captcha2.return_value = ("", 42)
 
+        config = KlantenSysteemConfig.get_solo()
+        config.primary_backend = KlantenServiceType.ESUITE.value
+        config.register_contact_via_api = True
+        config.send_email_confirmation = True
+        config.save()
+
         config = ESuiteKlantConfig.get_solo()
-        config.register_contact_moment = True
         config.register_bronorganisatie_rsin = "123456789"
         config.register_type = "Melding"
         config.register_employee_id = "FooVonBar"
@@ -809,25 +860,30 @@ class ContactFormIntegrationTest(
         # we need to patch the captcha Q&A twice because they are re-generated by the form
         mock_captcha2.return_value = ("", 42)
 
-        config = ESuiteKlantConfig.get_solo()
-        config.register_contact_moment = True
-        config.register_bronorganisatie_rsin = "123456789"
-        config.register_type = "Melding"
-        config.register_employee_id = "FooVonBar"
-        config.save()
+        klant_config = KlantenSysteemConfig.get_solo()
+        klant_config.primary_backend = KlantenServiceType.ESUITE.value
+        klant_config.register_contact_via_api = True
+        klant_config.save()
+
+        esuite_config = ESuiteKlantConfig.get_solo()
+        esuite_config.register_contact_moment = True
+        esuite_config.register_bronorganisatie_rsin = "123456789"
+        esuite_config.register_type = "Melding"
+        esuite_config.register_employee_id = "FooVonBar"
+        esuite_config.save()
 
         data = MockAPICreateData()
         data.install_mocks_anon(m)
 
         subject = ContactFormSubjectFactory(
-            config=config,
+            config=esuite_config,
             subject="Aanvraag document",
             subject_code="afdeling-xyz",
         )
         for send in [True, False]:
             with self.subTest(send=send):
-                config.send_email_confirmation = send
-                config.save()
+                klant_config.send_email_confirmation = send
+                klant_config.save()
 
                 response = self.app.get(self.url)
                 form = response.forms["contactmoment-form"]
