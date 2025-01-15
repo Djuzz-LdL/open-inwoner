@@ -219,7 +219,7 @@ dill==0.3.7
     #   -c requirements/ci.txt
     #   -r requirements/ci.txt
     #   pylint
-django==4.2.16
+django==4.2.18
     # via
     #   -c requirements/ci.txt
     #   -r requirements/ci.txt
