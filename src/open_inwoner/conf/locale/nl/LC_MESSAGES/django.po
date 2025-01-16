@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-01-16 13:02+0100\n"
+"POT-Creation-Date: 2025-01-16 15:42+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1983,12 +1983,12 @@ msgstr "E-mailadres bevestigen"
 #, python-brace-format
 msgid ""
 "Er is een e-mail verstuurd naar {email}. Klik op de link in de mail om uw e-"
-"mailadres te bevestigen.Heef u geen e-mail ontvangen? Verstuur deze dan nog "
-"een keer via onderstaande knop."
+"mailadres te bevestigen. Heeft u geen e-mail ontvangen? Verstuur deze dan "
+"nog een keer via onderstaande knop."
 msgstr ""
 "Er is een e-mail verstuurd naar {email}. Klik op de link in de mail om uw e-"
-"mailadres te bevestigen.Heef u geen e-mail ontvangen? Verstuur deze dan nog "
-"een keer via onderstaande knop."
+"mailadres te bevestigen. Heeft u geen e-mail ontvangen? Verstuur deze dan "
+"nog een keer via onderstaande knop."
 
 #: open_inwoner/accounts/views/registration.py:236
 msgid "Verstuur de e-mail opnieuw"
@@ -4912,15 +4912,20 @@ msgstr "Interne taak toelichting"
 msgid "OpenKlant2 configuration"
 msgstr "OpenKlant2 configuratie"
 
-#: open_inwoner/openklant/models.py:259
+#: open_inwoner/openklant/models.py:256
+msgid "Primary backend"
+msgstr "Primaire backend"
+
+#: open_inwoner/openklant/models.py:260
 msgid ""
 "Choose the primary backend for retrieving klanten data. Changes to klanten "
 "data will be saved to both backends (if configured)."
-msgstr "Kies het primaire systeem voor het ophalen van klantgegevens. Mutaties "
-"in klantgegevens zullen naar beide systemen worden weggeschreven (mits "
+msgstr ""
+"Kies het primaire systeem voor het ophalen van klantgegevens. Mutaties in "
+"klantgegevens zullen naar beide systemen worden weggeschreven (mits "
 "geconfigureerd)."
 
-#: open_inwoner/openklant/models.py:266
+#: open_inwoner/openklant/models.py:267
 msgid "Configuratie Klanten Systeem"
 msgstr "Configuratie Klanten Systeem"
 
@@ -5209,7 +5214,8 @@ msgstr ""
 
 #: open_inwoner/openzaak/models.py:441
 msgid "By default cases are only shown if they have a status set."
-msgstr "Standaard zullen aanvragen slechts zichtbaar zijn als de status bekend is."
+msgstr ""
+"Standaard zullen aanvragen slechts zichtbaar zijn als de status bekend is."
 
 #: open_inwoner/openzaak/models.py:446
 msgid "Title text"
@@ -7109,6 +7115,18 @@ msgstr ""
 #: open_inwoner/templates/admin/import_zgw_export_form.html:19
 msgid "Upload file"
 msgstr "Upload bestand"
+
+#: open_inwoner/templates/admin/openklant/klantensysteemconfig/change_form.html:2
+msgid "Configure the backends for retrieving Klanten data:"
+msgstr "Configureer de backends for het ophalen van klantgegevens:"
+
+#: open_inwoner/templates/admin/openklant/klantensysteemconfig/change_form.html:6
+msgid "Configure eSuite backend"
+msgstr "Configureer de eSuite backend"
+
+#: open_inwoner/templates/admin/openklant/klantensysteemconfig/change_form.html:11
+msgid "Configure OpenKlant2 backend"
+msgstr "Configureer de OpenKlant2 backend"
 
 #: open_inwoner/templates/cms/banner/banner_image_plugin.html:7
 #: open_inwoner/templates/cms/fullwidth.html:19
