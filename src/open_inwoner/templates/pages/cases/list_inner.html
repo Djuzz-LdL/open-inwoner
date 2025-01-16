@@ -30,7 +30,7 @@
 <div class="card__grid">
 {% render_grid %}
     {% if not cases %}
-        <b>{% trans "U heeft op dit moment nog geen lopende aanvragen." %}</b>
+        <p class="utrecht-paragraph"><strong>{% trans "U heeft op dit moment nog geen lopende aanvragen." %}</strong></p>
     {% endif %}
 
     {% for case in cases %}

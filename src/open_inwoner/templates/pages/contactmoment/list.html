@@ -29,7 +29,7 @@
         {% if questions %}
             <h2 class="contactmomenten__title">{% trans "Eerder gestelde vragen" %}</h2>
         {% else %}
-            <h2>{% trans "U heeft op dit moment nog geen vragen." %}</h2>
+            <p class="utrecht-paragraph"><strong>{% trans "U heeft op dit moment nog geen vragen." %}</strong></p>
         {% endif %}
 
         {% render_grid %}
