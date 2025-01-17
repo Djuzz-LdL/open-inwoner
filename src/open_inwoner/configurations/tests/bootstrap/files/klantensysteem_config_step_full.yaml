@@ -1,0 +1,6 @@
+klantensysteem_config_enable: true
+klantensysteem_config:
+  primary_backend: esuite
+  register_contact_via_api: true
+  register_contact_email: "oip-test@test.nl"
+  send_email_confirmation: true

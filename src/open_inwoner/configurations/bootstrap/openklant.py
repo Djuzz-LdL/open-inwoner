@@ -54,7 +54,7 @@ class KlantenApiConfigurationModel(ConfigurationModel):
         }
 
 
-class KlantSysteemConfigurationModel(ConfigurationModel):
+class KlantenSysteemConfigurationModel(ConfigurationModel):
     class Meta:
         django_model_refs = {
             KlantenSysteemConfig: (
@@ -154,8 +154,25 @@ class OpenKlant2ConfigurationStep(BaseConfigurationStep[OpenKlant2Configuration]
         config.save()
 
 
-# TODO: complete config step
-class KlantSysteemConfigurationStep(
-    BaseConfigurationStep[KlantSysteemConfigurationModel]
+class KlantenSysteemConfigurationStep(
+    BaseConfigurationStep[KlantenSysteemConfigurationModel]
 ):
-    pass
+    """
+    Configure the KlantenSysteem settings
+    """
+
+    verbose_name = "KlantenSysteem configuration"
+    enable_setting = "klantensysteem_config_enable"
+    namespace = "klantensysteem_config"
+    config_model = KlantenSysteemConfigurationModel
+
+    def execute(self, model: KlantenApiConfigurationModel):
+        create_or_update_kwargs = model.model_dump()
+
+        config = KlantenSysteemConfig.get_solo()
+
+        for key, val in create_or_update_kwargs.items():
+            setattr(config, key, val)
+
+        config.full_clean()
+        config.save()
