@@ -42,14 +42,6 @@ class ESuiteKlantConfig(SingletonModel):
         blank=True,
     )
 
-    register_email = models.EmailField(
-        verbose_name=_("Registreer op email adres"),
-        blank=True,
-    )
-    register_contact_moment = models.BooleanField(
-        verbose_name=_("Registreer in Contactmomenten API"),
-        default=False,
-    )
     register_bronorganisatie_rsin = models.CharField(
         verbose_name=_("Organisatie RSIN"),
         max_length=9,
@@ -89,14 +81,6 @@ class ESuiteKlantConfig(SingletonModel):
         ),
         default=False,
     )
-    send_email_confirmation = models.BooleanField(
-        verbose_name=_("Stuur contactformulier e-mailbevestiging"),
-        help_text=_(
-            "If enabled the 'contactform_confirmation' email template will be sent. "
-            "If disabled the external API will send a confirmation email."
-        ),
-        default=False,
-    )
     exclude_contactmoment_kanalen = ArrayField(
         base_field=models.CharField(
             blank=True,
@@ -113,7 +97,6 @@ class ESuiteKlantConfig(SingletonModel):
     )
 
     register_api_required_fields = (
-        "register_contact_moment",
         "contactmomenten_service",
         "klanten_service",
         "register_bronorganisatie_rsin",
@@ -124,12 +107,6 @@ class ESuiteKlantConfig(SingletonModel):
 
     class Meta:
         verbose_name = _("eSuite Klant configuration")
-
-    def has_register(self) -> bool:
-        return self.register_email or self.has_api_configuration()
-
-    def has_form_configuration(self) -> bool:
-        return self.has_register() and self.contactformsubject_set.exists()
 
     def has_api_configuration(self):
         return all(getattr(self, f, "") for f in self.register_api_required_fields)
@@ -274,9 +251,58 @@ class KlantenSysteemConfig(SingletonModel):
         ),
         validators=[validate_primary_backend],
     )
+    register_contact_via_api = models.BooleanField(
+        verbose_name=_("Registreer op API"),
+        default=False,
+        help_text=_(
+            "Contacts initiated or questions submitted by a client (e.g. via a contact form) will be "
+            "registered in the appropriate API (eSuite or OpenKlant2)."
+        ),
+    )
+    register_contact_email = models.EmailField(
+        verbose_name=_("Registreer op email adres"),
+        blank=True,
+        help_text=_(
+            "Contacts initiated or questions submitted by a client (e.g. via a contact form) will be "
+            "registered via email."
+        ),
+    )
+    send_email_confirmation = models.BooleanField(
+        verbose_name=_("Stuur contactformulier e-mailbevestiging"),
+        help_text=_(
+            "If enabled the 'contactform_confirmation' email template will be sent. "
+            "If disabled the external API will send a confirmation email."
+        ),
+        default=False,
+    )
 
     class Meta:
         verbose_name = _("Configuratie Klanten Systeem")
 
     def __str__(self):
         return "Configuratie Klanten Systeem"
+
+    @property
+    def has_api_configuration(self) -> bool:
+        if self.primary_backend == KlantenServiceType.ESUITE.value:
+            esuite_config = ESuiteKlantConfig.get_solo()
+            return esuite_config.has_api_configuration()
+
+        # TODO: support `has_api_configuration` check for OK2?
+        return False
+
+    @property
+    def contact_registration_enabled(self) -> bool:
+        return bool(self.register_contact_email or self.has_api_configuration)
+
+    @property
+    def has_contactform_configuration(self) -> bool:
+        if not self.contact_registration_enabled:
+            return False
+
+        if self.primary_backend == KlantenServiceType.ESUITE.value:
+            esuite_config = ESuiteKlantConfig.get_solo()
+            return esuite_config.contactformsubject_set.exists()
+
+        # TODO: check conditions for OK2
+        return False

@@ -17,8 +17,8 @@ from zgw_consumers.constants import APITypes
 from open_inwoner.accounts.tests.factories import DigidUserFactory
 from open_inwoner.cms.tests import cms_tools
 from open_inwoner.configurations.models import SiteConfiguration
-from open_inwoner.openklant.constants import Status
-from open_inwoner.openklant.models import ESuiteKlantConfig
+from open_inwoner.openklant.constants import KlantenServiceType, Status
+from open_inwoner.openklant.models import ESuiteKlantConfig, KlantenSysteemConfig
 from open_inwoner.openklant.services import eSuiteVragenService
 from open_inwoner.openklant.tests.data import CONTACTMOMENTEN_ROOT, KLANTEN_ROOT
 from open_inwoner.openzaak.models import OpenZaakConfig
@@ -89,18 +89,23 @@ class CasesPlaywrightTests(
         self.oz_config.save()
 
         # klant config
-        self.klant_config = ESuiteKlantConfig.get_solo()
-        self.klant_config.register_contact_moment = True
-        self.klant_config.register_bronorganisatie_rsin = "123456788"
-        self.klant_config.register_type = "Melding"
-        self.klant_config.register_employee_id = "FooVonBar"
-        self.klant_config.klanten_service = ServiceFactory(
+        self.klant_config = KlantenSysteemConfig.get_solo()
+        self.klant_config.primary_backend = KlantenServiceType.ESUITE.value
+        self.klant_config.register_contact_via_api = True
+        self.klant_config.send_email_confirmation = True
+        self.klant_config.save()
+
+        self.esuite_config = ESuiteKlantConfig.get_solo()
+        self.esuite_config.register_bronorganisatie_rsin = "123456788"
+        self.esuite_config.register_type = "Melding"
+        self.esuite_config.register_employee_id = "FooVonBar"
+        self.esuite_config.klanten_service = ServiceFactory(
             api_root=KLANTEN_ROOT, api_type=APITypes.kc
         )
-        self.klant_config.contactmomenten_service = ServiceFactory(
+        self.esuite_config.contactmomenten_service = ServiceFactory(
             api_root=CONTACTMOMENTEN_ROOT, api_type=APITypes.cmc
         )
-        self.klant_config.save()
+        self.esuite_config.save()
 
         self.zaak = generate_oas_component_cached(
             "zrc",

@@ -1,16 +1,23 @@
 from pathlib import Path
 
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 
 from django_setup_configuration.exceptions import ConfigurationRunFailed
 from django_setup_configuration.test_utils import execute_single_step
 from zgw_consumers.constants import APITypes
 
-from open_inwoner.openklant.models import ESuiteKlantConfig, OpenKlant2Config
+from open_inwoner.openklant.constants import KlantenServiceType
+from open_inwoner.openklant.models import (
+    ESuiteKlantConfig,
+    KlantenSysteemConfig,
+    OpenKlant2Config,
+)
 from open_inwoner.openzaak.tests.factories import ServiceFactory
 
 from ...bootstrap.openklant import (
     ESuiteKlantConfigurationStep,
+    KlantenSysteemConfigurationStep,
     OpenKlant2ConfigurationStep,
 )
 
@@ -19,6 +26,9 @@ CONTACTMOMENTEN_SERVICE_API_ROOT = "https://openklant.local/contactmomenten/api/
 
 BASE_DIR = Path(__file__).parent / "files"
 ESUITEKLANT_CONFIG_STEP_FULL_YAML = str(BASE_DIR / "esuiteklant_config_step_full.yaml")
+KLANTENSYSTEEM_CONFIG_STEP_FULL_YAML = str(
+    BASE_DIR / "klantensysteem_config_step_full.yaml"
+)
 OPENKLANT2_CONFIG_STEP_FULL_YAML = str(BASE_DIR / "openklant2_config_step_full.yaml")
 
 
@@ -43,8 +53,6 @@ class ESuiteKlantConfigurationStepTestCase(TestCase):
         self.assertEqual(config.klanten_service, kc)
         self.assertEqual(config.contactmomenten_service, cmc)
 
-        self.assertEqual(config.register_email, "admin@oip.org")
-        self.assertEqual(config.register_contact_moment, True)
         self.assertEqual(config.register_bronorganisatie_rsin, "837194569")
         self.assertEqual(config.register_channel, "email")
         self.assertEqual(config.register_type, "bericht")
@@ -149,8 +157,6 @@ class ESuiteKlantConfigurationStepTestCase(TestCase):
             self.assertEqual(config.klanten_service, kc)
             self.assertEqual(config.contactmomenten_service, cmc)
 
-            self.assertEqual(config.register_email, "admin@oip.org")
-            self.assertEqual(config.register_contact_moment, True)
             self.assertEqual(config.register_bronorganisatie_rsin, "837194569")
             self.assertEqual(config.register_channel, "email")
             self.assertEqual(config.register_type, "bericht")
@@ -164,8 +170,6 @@ class ESuiteKlantConfigurationStepTestCase(TestCase):
         assert_values()
 
         config = ESuiteKlantConfig.get_solo()
-        config.register_email = "not-admin@oip.org"
-        config.register_contact_moment = False
         config.register_bronorganisatie_rsin = "800000009"
         config.register_channel = "not-email"
         config.register_type = "not-bericht"
@@ -205,3 +209,39 @@ class OpenKlant2ConfigurationStepTestCase(TestCase):
         self.assertEqual(
             config.interne_taak_toelichting, "Vraag via OIP, graag beantwoorden"
         )
+
+
+class KlantenSysteemConfigurationStepTest(TestCase):
+    def test_configure_success(self):
+        kc = ServiceFactory(
+            slug="klanten-service",
+            api_root=KLANTEN_SERVICE_API_ROOT,
+            api_type=APITypes.kc,
+        )
+        cmc = ServiceFactory(
+            slug="contactmomenten-service",
+            api_root=CONTACTMOMENTEN_SERVICE_API_ROOT,
+            api_type=APITypes.cmc,
+        )
+        esuite_config = ESuiteKlantConfig.get_solo()
+        esuite_config.klanten_service = kc
+        esuite_config.contactmomenten_service = cmc
+        esuite_config.save()
+
+        execute_single_step(
+            KlantenSysteemConfigurationStep,
+            yaml_source=KLANTENSYSTEEM_CONFIG_STEP_FULL_YAML,
+        )
+
+        config = KlantenSysteemConfig.get_solo()
+        self.assertEqual(config.primary_backend, KlantenServiceType.ESUITE.value)
+        self.assertTrue(config.register_contact_via_api)
+        self.assertEqual(config.register_contact_email, "oip-test@test.nl")
+        self.assertTrue(config.send_email_confirmation)
+
+    def test_configure_missing_api_services(self):
+        with self.assertRaises(ValidationError):
+            execute_single_step(
+                KlantenSysteemConfigurationStep,
+                yaml_source=KLANTENSYSTEEM_CONFIG_STEP_FULL_YAML,
+            )

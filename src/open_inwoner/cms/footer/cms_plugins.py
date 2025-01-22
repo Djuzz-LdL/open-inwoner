@@ -4,7 +4,7 @@ from cms.plugin_base import CMSPluginBase
 from cms.plugin_pool import plugin_pool
 
 from open_inwoner.configurations.models import SiteConfiguration
-from open_inwoner.openklant.models import ESuiteKlantConfig
+from open_inwoner.openklant.models import KlantenSysteemConfig
 
 
 @plugin_pool.register_plugin
@@ -17,7 +17,7 @@ class FooterPagesPlugin(CMSPluginBase):
     def render(self, context, instance, placeholder):
         # TODO move options to plugin model
         config = SiteConfiguration.get_solo()
-        ok_config = ESuiteKlantConfig.get_solo()
+        klant_config = KlantenSysteemConfig.get_solo()
         context["flatpages"] = config.get_ordered_flatpages
-        context["has_form_configuration"] = ok_config.has_form_configuration()
+        context["has_form_configuration"] = klant_config.has_contactform_configuration
         return context

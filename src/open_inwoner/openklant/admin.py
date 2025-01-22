@@ -43,17 +43,6 @@ class ESuiteKlantConfigAdminForm(forms.ModelForm):
         model = ESuiteKlantConfig
         fields = "__all__"
 
-    def clean(self, *args, **kwargs):
-        cleaned_data = super().clean(*args, **kwargs)
-
-        if cleaned_data["register_contact_moment"]:
-            msg = _(
-                "Voor registratie in de Klanten en Contactmomenten API is dit veld vereist."
-            )
-            for field_name in ESuiteKlantConfig.register_api_required_fields:
-                if not cleaned_data[field_name]:
-                    self.add_error(field_name, msg)
-
 
 @admin.register(ESuiteKlantConfig)
 class ESuiteKlantConfigAdmin(OrderedInlineModelAdminMixin, SingletonModelAdmin):
@@ -63,24 +52,14 @@ class ESuiteKlantConfigAdmin(OrderedInlineModelAdminMixin, SingletonModelAdmin):
     ]
     fieldsets = [
         (
-            _("Email registratie"),
-            {
-                "fields": [
-                    "register_email",
-                ],
-            },
-        ),
-        (
             _("Klanten en Contacten API registratie"),
             {
                 "fields": [
-                    "register_contact_moment",
                     "register_bronorganisatie_rsin",
                     "register_type",
                     "register_channel",
                     "register_employee_id",
                     "use_rsin_for_innNnpId_query_parameter",
-                    "send_email_confirmation",
                 ],
             },
         ),
@@ -157,7 +136,21 @@ class OpenKlant2ConfigAdmin(SingletonModelAdmin):
 
 @admin.register(KlantenSysteemConfig)
 class KlantenSysteemConfigAdmin(SingletonModelAdmin):
+    model = KlantenSysteemConfig
     change_form_template = "admin/openklant/klantensysteemconfig/change_form.html"
-
-    class Meta:
-        model = KlantenSysteemConfig
+    fieldsets = [
+        (
+            _("API configuration globals"),
+            {"fields": ["primary_backend"]},
+        ),
+        (
+            _("Vragen/contactmomenten"),
+            {
+                "fields": [
+                    "register_contact_via_api",
+                    "register_contact_email",
+                    "send_email_confirmation",
+                ]
+            },
+        ),
+    ]
