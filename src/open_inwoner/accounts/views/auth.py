@@ -18,13 +18,13 @@ from digid_eherkenning.mock.views.digid import DigiDAssertionConsumerServiceMock
 from digid_eherkenning.views.base import get_redirect_url
 from digid_eherkenning.views.digid import DigiDAssertionConsumerServiceView
 from digid_eherkenning.views.eherkenning import eHerkenningAssertionConsumerServiceView
+from glom import glom
 
 from eherkenning.mock import eherkenning_conf
 from eherkenning.mock.views.eherkenning import (
     eHerkenningAssertionConsumerServiceMockView,
 )
-from open_inwoner.openklant.models import ESuiteKlantConfig
-from open_inwoner.openzaak.models import OpenZaakConfig
+from open_inwoner.kvk.client import KvKClient
 from open_inwoner.utils.views import LogMixin
 
 from ..choices import LoginTypeChoices
@@ -136,16 +136,23 @@ class BlockEenmanszaakLoginMixin:
     def get(self, request):
         response = super().get(request)
 
-        openzaak_config = OpenZaakConfig.get_solo()
-        klant_config = ESuiteKlantConfig.get_solo()
-        if (
-            hasattr(request.user, "rsin")
-            and not request.user.rsin
-            and (
-                openzaak_config.fetch_eherkenning_zaken_with_rsin
-                or klant_config.use_rsin_for_innNnpId_query_parameter
-            )
-        ):
+        if not hasattr(request.user, "kvk"):
+            return response
+        if not (kvk := request.user.kvk):
+            return response
+
+        client = KvKClient()
+        basisprofiel = client.get_basisprofiel(kvk=kvk)
+
+        if basisprofiel.get("fout"):
+            auth.logout(request)
+            message = basisprofiel["fout"][0]["omschrijving"]
+            messages.error(request, message)
+            failure_url = self.get_failure_url()
+            return HttpResponseRedirect(failure_url)
+
+        rechtsvorm = glom(basisprofiel, "_embedded.eigenaar.rechtsvorm", default="")
+        if rechtsvorm == "Eenmanszaak":
             auth.logout(request)
             message = _("Use DigiD to log in as a sole proprietor.")
             messages.error(request, message)

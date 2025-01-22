@@ -108,6 +108,7 @@ class PasswordLoginViewTests(eHerkenningMockTestCase):
         self.assertContains(response, reverse("login"))
         self.assertNoEHerkenningURLS(response)
 
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch(
         "open_inwoner.kvk.signals.KvKClient.retrieve_rsin_with_kvk",
         return_value="123456789",
@@ -115,12 +116,15 @@ class PasswordLoginViewTests(eHerkenningMockTestCase):
     )
     @patch("open_inwoner.kvk.client.KvKClient.get_all_company_branches", autospec=True)
     def test_post_redirects_and_authenticates(
-        self, mock_kvk, mock_retrieve_rsin_with_kvk
+        self, mock_kvk, mock_retrieve_rsin_with_kvk, mock_get_basisprofiel
     ):
         mock_kvk.return_value = [
             {"kvkNummer": "29664887", "vestigingsnummer": "1234"},
             {"kvkNummer": "29664887", "vestigingsnummer": "5678"},
         ]
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
 
         url = reverse("eherkenning-mock:password")
         params = {
@@ -164,8 +168,9 @@ class PasswordLoginViewTests(eHerkenningMockTestCase):
         # check company branch number in session
         self.assertEqual(get_kvk_branch_number(self.client.session), "1234")
 
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch("open_inwoner.kvk.client.KvKClient.get_all_company_branches")
-    def test_redirect_flow_with_single_company(self, mock_kvk):
+    def test_redirect_flow_with_single_company(self, mock_kvk, mock_get_basisprofiel):
         """
         Assert that if the KvK API returns only a single company:
             1. the redirect flow passes automatically through `KvKLoginMiddleware`
@@ -174,6 +179,9 @@ class PasswordLoginViewTests(eHerkenningMockTestCase):
         mock_kvk.return_value = [
             {"kvkNummer": "29664887", "vestigingsnummer": "1234"},
         ]
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
 
         url = reverse("eherkenning-mock:password")
         params = {
@@ -201,8 +209,11 @@ class PasswordLoginViewTests(eHerkenningMockTestCase):
         # check company branch number in session
         self.assertEqual(get_kvk_branch_number(self.client.session), None)
 
+    @patch("open_inwoner.kvk.signals.KvKClient.get_basisprofiel", autospec=True)
     @patch("open_inwoner.kvk.client.KvKClient.get_all_company_branches")
-    def test_redirect_flow_with_no_vestigingsnummer(self, mock_kvk):
+    def test_redirect_flow_with_no_vestigingsnummer(
+        self, mock_kvk, mock_get_basisprofiel
+    ):
         """
         Assert that if the KvK API returns only a single company without vestigingsnummer:
             1. the redirect flow passes automatically through `KvKLoginMiddleware`
@@ -211,6 +222,9 @@ class PasswordLoginViewTests(eHerkenningMockTestCase):
         mock_kvk.return_value = [
             {"kvkNummer": "29664887"},
         ]
+        mock_get_basisprofiel.return_value = {
+            "_embedded": {"eigenaar": {"rechtsvorm": "Stichting"}}
+        }
 
         url = reverse("eherkenning-mock:password")
         params = {
