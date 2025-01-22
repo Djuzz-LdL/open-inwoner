@@ -6,7 +6,7 @@ openzaak_config:
   skip_notification_statustype_informeren: false
   reformat_esuite_zaak_identificatie: true
   fetch_eherkenning_zaken_with_rsin: false
-  use_zaak_omschrijving_as_title: 'true'
+  derive_zaak_titel_from: zaaktype_omschrijving
   order_statuses_by_date_set: false
   title_text: title text from setup configuration
   enable_categories_filtering_with_zaken: true
@@ -16,5 +16,5 @@ openzaak_config:
     - .pdf
     - .txt
   # Empty api_groups should not raise a missing exception, but should raise a
-  # 
+  #
   api_groups: []

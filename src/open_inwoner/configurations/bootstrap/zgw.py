@@ -29,7 +29,7 @@ class OpenZaakConfigurationModel(ConfigurationModel):
                 "skip_notification_statustype_informeren",
                 "reformat_esuite_zaak_identificatie",
                 "fetch_eherkenning_zaken_with_rsin",
-                "use_zaak_omschrijving_as_title",
+                "derive_zaak_titel_from",
                 "order_statuses_by_date_set",
                 "title_text",
                 "enable_categories_filtering_with_zaken",

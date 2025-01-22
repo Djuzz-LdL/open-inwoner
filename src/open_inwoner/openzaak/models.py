@@ -26,7 +26,7 @@ from open_inwoner.openzaak.managers import (
     ZaakTypeStatusTypeConfigQuerySet,
 )
 
-from .constants import StatusIndicators
+from .constants import StatusIndicators, ZaakTitleDisplayChoices
 
 logger = logging.getLogger(__name__)
 
@@ -411,18 +411,14 @@ class OpenZaakConfig(SingletonModel):
         ),
         default=False,
     )
-
-    use_zaak_omschrijving_as_title = models.BooleanField(
-        verbose_name=_(
-            "Make use of zaak.omschrijving for the title of the cases instead of "
-            "zaaktype.omschrijving (eSuite)"
-        ),
+    derive_zaak_titel_from = models.CharField(
+        choices=ZaakTitleDisplayChoices.choices,
+        default=ZaakTitleDisplayChoices.zaaktype_omschrijving,
+        verbose_name=_("Derive the case title from"),
         help_text=_(
-            "If enabled, we use zaak.omschrijving for the title of the cases, and use "
-            "zaaktype.omschrijving as a fallback in case it is not filled in. "
-            "If not enabled, we ignore zaak.omschrijving and always use zaaktype.omschrijving."
+            "Which field from the underlying zaaksysteem to use to display the title "
+            " for a zaak (e.g. on the Mijn Aanvragen page)."
         ),
-        default=False,
     )
     order_statuses_by_date_set = models.BooleanField(
         verbose_name=_(
