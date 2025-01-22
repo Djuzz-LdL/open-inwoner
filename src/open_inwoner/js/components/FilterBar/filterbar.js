@@ -7,15 +7,10 @@ export class FilterBar {
     this.filterButton = node.querySelector('#selectButton')
     this.backdrop = document.getElementById('filterBarBackdrop')
     this.closeButton = node.querySelector('.show-controls')
+    this.selectionFilterBar = document.getElementById('selectionFilterBar')
 
-    // Check if elements are found
-    if (!this.filterPopup) {
-      console.error('Filter popup button not found!')
-      return
-    }
-
-    if (!this.filterButton) {
-      console.error('Select button not found!')
+    // Break if critical elements are not found
+    if (!this.filterPopup || !this.filterButton || !this.selectionFilterBar) {
       return
     }
 
@@ -34,6 +29,14 @@ export class FilterBar {
       this.closeFilterPopup.bind(this),
       false
     )
+
+    // Attach checkbox listeners and update state
+    this.attachCheckboxListeners()
+
+    // Ensure the correct state is applied on page load
+    setTimeout(() => {
+      this.updateFilterBarState()
+    }, 100)
   }
 
   toggleOpenFilterPopup(event) {
@@ -47,11 +50,11 @@ export class FilterBar {
       this.node.classList.toggle('filter-bar--mobile')
       const isExpanded =
         this.filterPopup.getAttribute('aria-expanded') === 'true'
-      this.filterPopup.setAttribute('aria-expanded', !isExpanded)
+      this.filterPopup.setAttribute('aria-expanded', (!isExpanded).toString())
     }, 5)
   }
 
-  closeFilterPopupDirect(event) {
+  closeFilterPopupDirect() {
     // Remove 'show' class from the backdrop to hide it
     this.backdrop.classList.remove('show')
 
@@ -76,6 +79,35 @@ export class FilterBar {
       this.node.classList.remove('filter-bar--mobile')
       this.filterPopup.setAttribute('aria-expanded', 'false')
     }
+  }
+
+  updateFilterBarState() {
+    const checkboxes = this.node.querySelectorAll(
+      '#listboxDropdown .checkbox__input'
+    )
+    const anyChecked = Array.from(checkboxes).some(
+      (checkbox) => checkbox.checked
+    )
+
+    if (anyChecked) {
+      this.selectionFilterBar.classList.add('active')
+      this.selectionFilterBar.classList.remove('inactive')
+    } else {
+      this.selectionFilterBar.classList.remove('active')
+      this.selectionFilterBar.classList.add('inactive')
+    }
+  }
+
+  attachCheckboxListeners() {
+    const checkboxes = this.node.querySelectorAll(
+      '#listboxDropdown .checkbox__input'
+    )
+
+    checkboxes.forEach((checkbox) => {
+      checkbox.addEventListener('change', () => {
+        this.updateFilterBarState()
+      })
+    })
   }
 }
 
