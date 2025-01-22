@@ -97,6 +97,16 @@ class CompanyBranchChoiceView(LogMixin, FormView):
 
         # empty string for KVK_BRANCH_SESSION_VARIABLE is interpreted as
         # "interact as the rechtspersoon, not as any specific branch"
-        request.session[KVK_BRANCH_SESSION_VARIABLE] = request.POST["branch_number"]
+        branch_number = request.POST["branch_number"]
+        request.session[KVK_BRANCH_SESSION_VARIABLE] = branch_number
+        self.log_user_action(
+            request.user,
+            (
+                "Selected branch %s of rechtspersoon %s"
+                % (branch_number, request.user.kvk)
+                if branch_number
+                else "Selected rechtspersoon %s" % request.user.kvk
+            ),
+        )
 
         return HttpResponseRedirect(redirect)
