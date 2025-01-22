@@ -13,3 +13,9 @@
     page-break-before: always;
   }
 }
+
+table td {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  white-space: normal;
+}
