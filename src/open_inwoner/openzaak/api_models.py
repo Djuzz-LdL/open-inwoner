@@ -12,6 +12,8 @@ from zgw_consumers.api_models.constants import RolOmschrijving, RolTypes
 
 from open_inwoner.utils.glom import glom_multiple
 
+from .constants import ZaakTitleDisplayChoices
+
 logger = logging.getLogger(__name__)
 
 
@@ -105,9 +107,22 @@ class Zaak(ZGWModel):
 
         zaak_config = OpenZaakConfig.get_solo()
 
-        description = self.zaaktype.omschrijving
-        if zaak_config.use_zaak_omschrijving_as_title and self.omschrijving:
-            description = self.omschrijving
+        description = ""
+        match zaak_config.derive_zaak_titel_from:
+            case ZaakTitleDisplayChoices.zaak_omschrijving:
+                description = self.omschrijving
+            case ZaakTitleDisplayChoices.zaaktype_omschrijving:
+                description = self.zaaktype.omschrijving
+            case ZaakTitleDisplayChoices.zaaktype_onderwerp:
+                description = self.zaaktype.onderwerp
+            case _:
+                raise ValueError(
+                    "Invalid choice `{zaak_config.derive_zaak_titel_from}` for "
+                    " `OpenZaakConfig.derive_zaak_titel_from`"
+                )
+
+        if not description:
+            logger.error("No valid description found for zaak: %s", self.identificatie)
 
         return description
 

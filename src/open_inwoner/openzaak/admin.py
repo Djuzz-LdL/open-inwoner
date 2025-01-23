@@ -66,7 +66,6 @@ class OpenZaakConfigAdmin(SingletonModelAdmin):
                 "fields": (
                     "enable_categories_filtering_with_zaken",
                     "zaken_filter_enabled",
-                    "use_zaak_omschrijving_as_title",
                     "order_statuses_by_date_set",
                 ),
             },
@@ -78,6 +77,7 @@ class OpenZaakConfigAdmin(SingletonModelAdmin):
                     "skip_notification_statustype_informeren",
                     "reformat_esuite_zaak_identificatie",
                     "fetch_eherkenning_zaken_with_rsin",
+                    "derive_zaak_titel_from",
                 ],
             },
         ),
@@ -177,9 +177,11 @@ class CatalogusConfigAdmin(admin.ModelAdmin):
                                 "error_rows": len(import_result.import_errors),
                             }
                         ),
-                        messages.SUCCESS
-                        if not import_result.import_errors
-                        else messages.WARNING,
+                        (
+                            messages.SUCCESS
+                            if not import_result.import_errors
+                            else messages.WARNING
+                        ),
                     )
                     if errors := import_result.import_errors:
                         msgs_deduped = set(error.__str__() for error in errors)
@@ -485,9 +487,11 @@ class ZaakTypeConfigAdmin(admin.ModelAdmin):
                                 "error_rows": len(import_result.import_errors),
                             }
                         ),
-                        messages.SUCCESS
-                        if not import_result.import_errors
-                        else messages.WARNING,
+                        (
+                            messages.SUCCESS
+                            if not import_result.import_errors
+                            else messages.WARNING
+                        ),
                     )
                     if errors := import_result.import_errors:
                         msgs_deduped = set(error.__str__() for error in errors)

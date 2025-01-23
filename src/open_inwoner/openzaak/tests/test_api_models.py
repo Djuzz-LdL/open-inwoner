@@ -4,6 +4,7 @@ from django.utils.translation import gettext as _
 from zgw_consumers.api_models.base import factory
 
 from open_inwoner.openzaak.api_models import Zaak, ZaakType
+from open_inwoner.openzaak.constants import ZaakTitleDisplayChoices
 from open_inwoner.openzaak.models import OpenZaakConfig
 
 
@@ -111,7 +112,18 @@ class ZaakAPIModelTest(TestCase):
         self.assertEqual(case.description, "Vergunning")
 
         zaak_config = OpenZaakConfig.get_solo()
-        zaak_config.use_zaak_omschrijving_as_title = True
-        zaak_config.save()
 
-        self.assertEqual(case.description, "Vergunning voor Joeri")
+        expected = {
+            ZaakTitleDisplayChoices.zaak_omschrijving: self.zaak_data["omschrijving"],
+            ZaakTitleDisplayChoices.zaaktype_omschrijving: zaaktype.omschrijving,
+            ZaakTitleDisplayChoices.zaaktype_onderwerp: zaaktype.onderwerp,
+        }
+        # Guard against new values
+        assert all(choice in expected.keys() for choice in ZaakTitleDisplayChoices)
+
+        for config_setting, expected_value in expected.items():
+            with self.subTest(config_setting):
+                zaak_config.derive_zaak_titel_from = config_setting
+                zaak_config.save()
+
+                self.assertEqual(case.description, expected_value)
