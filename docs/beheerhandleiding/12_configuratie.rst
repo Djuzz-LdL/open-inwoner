@@ -264,7 +264,7 @@ linkerkant van de pagina met zoekresultaten. Een voorbeeld hiervan is weergegeve
 12.1.8. E-mails
 ---------------
 
-Hier kunt u selecteren of u wilt dat gebruikers een mail ontvangen wanneer zij een nieuw bericht hebben.
+Hier kunt u selecteren of u wilt dat gebruikers een mail ontvangen wanneer zij een nieuw bericht hebben..
 
 | *Stuur een e-mail bij nieuwe berichten*
 | Wanneer dit is aangevinkt wordt er een e-mailnotificatie gestuurd naar
