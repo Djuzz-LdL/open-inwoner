@@ -193,7 +193,7 @@ intern gebruik bestemd zijn.
 
 Hier staan de API’s van de te koppelen services. Bij de configuratie van Open Zaak gaat het om een
 Klanten API en een Contactmomenten API. Deze services kunnen niet worden verwijderd of veranderd.
-U selecteert hier de juiste API van de betreffende gemeente.
+U selecteert hier de juiste API van de betreffende gemeente..
 
 9.2.1.5. Contactformulier onderwerpen
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
